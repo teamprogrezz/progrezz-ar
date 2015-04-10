@@ -21,10 +21,10 @@
 <body>
   <script>
     var ARViewer = new ARProgrezz.Viewer();
-    ARViewer.initViewer(function() {
-      
+    ARViewer.onInit = function() {
       ARViewer.addObject(0, 0);
-    }, {});
+    };
+    ARViewer.initViewer();
   </script>
 </body>
 

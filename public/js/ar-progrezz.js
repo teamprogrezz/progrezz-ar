@@ -44,17 +44,22 @@ ARProgrezz.Viewer = function (settings) {
   
   var scope = this; // Ámbito
   
-  // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
-  var HUMAN_FIELD_OF_VIEW = 70; // (º)
-  var MIN_VISION = 0.1, MAX_VISION = 1000;
-  var OBJECT_RADIUS = 1;
-  
   /* Ajustes del visor */
   this.settings = {
     mode: 'normal' // 'normal' || 'stereoscopic'
   }
   
   this.inited = false;
+  this.onInit = null;
+  this.viewerWidth = 0;
+  this.viewerHeight = 0;
+  
+  // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
+  var HUMAN_FIELD_OF_VIEW = 70; // (º)
+  var MIN_VISION = 0.1, MAX_VISION = 1000;
+  var OBJECT_RADIUS = 1;
+  
+  var real_height = 0;
   
   var ar_video; // Video
   var ar_scene, ar_camera, ar_renderer, ar_player, ar_controls; // Augmented Reality
@@ -71,31 +76,43 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicialización del vídeo del visor */
   function initVideo(onSuccess) {
     
-    // Comprobación de soporte de acceso a la cámara de vídeo - getUserMedia
-    navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
-
-    if (navigator.getUserMedia) {
+    // Indicador del estado de acceso
+    var video = { flag: ARProgrezz.Flags.WAIT };
+    
+    // Función de acceso al vídeo
+    function accessVideo(constraints) {
       
-      var video = { flag: ARProgrezz.Flags.WAIT };
-      
+      // Obtención de datos de vídeo
       navigator.getUserMedia (
         
         // Restricciones
-        {video: true, audio: false},
+        constraints,
         
         // Success Callback
         function(localMediaStream) {
           
           // Creación e inicialización del vídeo
           ar_video = document.createElement('video');
-          ar_video.setAttribute("style", "position: absolute; left: 0px; top: 0px; z-index: -1"); // TODO Descablear esto ?
+          ar_video.setAttribute("style", "position: absolute; left: 0px; top: 0px; z-index: -1");
           ar_video.width = window.innerWidth;
           ar_video.height = window.innerHeight;
-          ar_video.src = window.URL.createObjectURL(localMediaStream);
           ar_video.autoplay = true;
+          
+          // Callback de carga del vídeo
+          ar_video.onloadedmetadata = function() {
+            
+            // Calculando tamaño del visor de acuerdo al vídeo
+            var viewer_ratio = Math.min(ar_video.width / ar_video.videoWidth, ar_video.height / ar_video.videoHeight);
+            real_height = ar_video.height();
+            scope.viewerWidth = viewer_ratio * ar_video.videoWidth;
+            scope.viewerHeight = viewer_ratio * ar_video.videoHeight;
+            
+            video.flag = ARProgrezz.Flags.SUCCESS;
+          }
+          
           document.body.appendChild(ar_video);
           
-          video.flag = ARProgrezz.Flags.SUCCESS;
+          ar_video.src = window.URL.createObjectURL(localMediaStream);
         },
         
         // Error Callback
@@ -104,20 +121,64 @@ ARProgrezz.Viewer = function (settings) {
           video.flag = ARProgrezz.Flags.ERROR;
         }
       );
+    }
+    
+    // Comprobación de soporte de acceso a la cámara de vídeo - getUserMedia
+    navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    
+    if (!navigator.getUserMedia) {
+      
+      // TODO Reestructurar en utilidades, llamando a una función, se empleará una función u otra
+      // Acceso al vídeo según navegador
+      if (navigator.userAgent.toLowerCase().indexOf("chrome") != -1) { // En Chrome se utiliza por defecto la cámara frontal, por lo que se selecciona la trasera de forma manual
+        
+        MediaStreamTrack.getSources(function(sourceInfos) {
+          
+          // Seleccionando la cámara trasera del dispositivo
+          // TODO Probar en un móvil con doble cámara, y comprobar su correcto funcionamiento
+          var videoSource = null;
+          for (s in sourceInfos) {
+            if (sourceInfos[s].kind === 'video') {
+              alert(JSON.stringify(sourceInfos[s]));
+              videoSource = sourceInfos[s].id;
+            }
+          }
+          
+          accessVideo({video: {optional: [{sourceId: videoSource}]}, audio: false});
+        });
+      }
+      else if (navigator.userAgent.toLowerCase().indexOf("firefox") != -1) { // En Firefox el usuario decide que cámara compartir
+        accessVideo({video: true, audio: false});
+      }
+      else { // TODO Contemplar el caso de otros navegadores
+        alert (navigator.userAgent); // Quitar alerta
+      }
       
       ARProgrezz.Utils.waitCallback(video, onSuccess);
+      
+      return ARProgrezz.Flags.SUCCESS;
     }
     else {
       alert("Error: No se soporta getUserMedia");
+      
+      ar_video = document.createElement("img");
+      ar_video.width = scope.viewerWidth = window.innerWidth;
+      ar_video.height = scope.viewerHeight = real_height = window.innerHeight;
+      ar_video.setAttribute("style", "position: absolute; left: 0px; top: 0px; z-index: -1");
+      ar_video.src = 'img/background_video.jpg';
+      
+      document.body.appendChild(ar_video);
+      
+      onSuccess();
+      
       return ARProgrezz.Flags.ERROR;
-      // TODO Alternativa para cuando no se soporte getUserMedia, y tener cuidado que el cubo se dibuja a partir del tamaño del video
     }
   }
   
   /* Inicialización del jugador en la escena de realidad aumentada */
   function initPlayer() {
 
-    if (scope.settings.mode == 'normal') {
+    if (scope.settings.mode === 'normal') {
       
       // Creación de la cámara que representa la visión del jugador
       ar_camera = new THREE.PerspectiveCamera(HUMAN_FIELD_OF_VIEW, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
@@ -129,7 +190,7 @@ ARProgrezz.Viewer = function (settings) {
       
       return {vision: ar_camera, controls: ar_controls};
     }
-    else if (settings.mode == 'stereoscopic') {
+    else if (settings.mode === 'stereoscopic') {
       
       // TODO Cambiar en el futuro, para la visión estereoscópica
     }
@@ -162,8 +223,9 @@ ARProgrezz.Viewer = function (settings) {
       ar_renderer = new THREE.WebGLRenderer(options); 
     else // WebGL no soportado -> Renderizador Canvas
       ar_renderer = new THREE.CanvasRenderer(options);
-
-    ar_renderer.setSize(ar_video.width, ar_video.height); // TODO Cambiar por variables globales, y ajustar correctamente el tamaño
+    
+    ar_renderer.domElement.setAttribute("style", "display: block; margin: auto; padding-top: " + Math.trunc((real_height - scope.viewerHeight) / 2.0) + "px;");
+    ar_renderer.setSize(scope.viewerWidth, scope.viewerHeight); // TODO Cambiar por variables globales, y ajustar correctamente el tamaño
     ar_renderer.setClearColor( 0x000000, 0 );
     document.body.appendChild(ar_renderer.domElement);
     
@@ -171,12 +233,14 @@ ARProgrezz.Viewer = function (settings) {
     onSuccess();
   }
   
+  /* Actualización de los objetos */
   function updateObjects() {
     
     for (o in objects)
       objects[o].rotation.y += 0.02;
   }
   
+  /* Iniciar actualización de la escena */
   function playAnimation() {
     
     function render() {
@@ -190,7 +254,8 @@ ARProgrezz.Viewer = function (settings) {
     render();
   }
   
-  this.initViewer = function(onInit, settings) {
+  /* Inicializar visor de realidad aumentada */
+  this.initViewer = function(settings) {
     // TODO Comprobación de acceso al giroscopio, y a la geolocalización (y pedir permisos si fuera necesario)
     
     // Actualizando ajustes
@@ -209,12 +274,13 @@ ARProgrezz.Viewer = function (settings) {
         inited = true;
         
         // Función a ejecutar tras la inicialización
-        if (onInit)
-          onInit()
+        if (scope.onInit)
+          scope.onInit()
       });
     });
   }
   
+  /* Añadir objeto geolocalizado a la escena del visor */
   this.addObject = function(latitude, longitude) {
     
     // TODO Utilizar la latitud y la longitud para asignar la posición al objeto
