@@ -3,25 +3,125 @@
 ARProgrezz.Support = {};
 (function(namespace){
   
-  var video = null;
-  var gyroscope = null;
-  var geolocation = null;
+  // Tecnologías activadas
+  namespace.video = null;
+  namespace.gyroscope = null;
+  namespace.geolocation = null;
   
-  // TODO Comprobación de acceso al giroscopio, tirar el evento y mirar si cambia, chequearlos todos al principio, y las variables para indicar si está activado y otras para si están disponibles
-  /* Acceso a la cámara de vídeo soportado (Función getUserMedia) */
-  namespace.checkVideoCamera = function() {
+  // Función de acceso a vídeo
+  namespace.accessVideo = null;
+  
+  // Tecnologías soportadas
+  var available = {
+    video: false,
+    gyroscope: false,
+    geolocation: false
+  }
+  
+  /* Comprobación de acceso a vídeo, giroscopio, y geolocalización */
+  namespace.check = function(end_function) {
+    checkVideoCamera(function() {
+      checkGyroscope(function() {
+        checkGeolocation(function() {
+          if (end_function)
+            end_function();
+        });
+      })
+    });
+  }
+  
+  /* Acceso a la cámara de vídeo (getUserMedia) */
+  function checkVideoCamera(end_function) {
     
-    return (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    namespace.accessVideo = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    
+    if (namespace.accessVideo) {
+      
+      var signal = { flag: ARProgrezz.Flags.WAIT };
+      
+      navigator.getUserMedia = namespace.accessVideo;
+      
+      navigator.getUserMedia (
+        {video: true, audio: false},
+        function(localMediaStream) {
+          namespace.video = available.video = true;
+          signal.flag = ARProgrezz.Flags.SUCCESS;
+        },
+        function(error) {
+          available.video = namespace.video = false;
+          signal.flag = ARProgrezz.Flags.SUCCESS;
+        }
+      );
+      ARProgrezz.Utils.waitCallback(signal, end_function);
+    }
+    else {
+      
+      available.video = namespace.video = false;
+      end_function();
+    }
   }
   
   /* Acceso al giroscopio */
-  namespace.checkGyroscope = function() {
-    return window.DeviceOrientationEvent;
+  function checkGyroscope(end_function) {
+    
+    if (window.DeviceOrientationEvent) {
+      
+      var signal = { flag: ARProgrezz.Flags.WAIT };
+      
+      var EVENT_TIME = 1000;
+      var count = 0;
+      
+      var onEvent = function(event) {
+        
+        count += 1;
+      };
+      
+      var onEnd = function() {
+                
+        window.removeEventListener( 'deviceorientation', onEvent, false );
+        
+        if (count > 1)
+          available.gyroscope = namespace.gyroscope = true;
+        else
+          available.gyroscope = namespace.gyroscope = false;
+        signal.flag = ARProgrezz.Flags.SUCCESS;
+      }
+      
+      window.addEventListener( 'deviceorientation', onEvent, false );
+      ARProgrezz.Utils.waitCallback(signal, end_function);
+      setTimeout(onEnd, EVENT_TIME);
+    }
+    else {
+      
+      available.gyroscope = namespace.gyroscope = false;
+      end_function();
+    }
   }
   
   /* Acceso a la geolocalización */
-  namespace.checkGeolocation = function() {
-    return navigator.geolocation;
+  function checkGeolocation(end_function) {
+    
+    if (navigator.geolocation) {
+      
+      var signal = { flag: ARProgrezz.Flags.WAIT };
+      
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          namespace.geolocation = available.geolocation = true;
+          signal.flag = ARProgrezz.Flags.SUCCESS;
+        },
+        function(error) {
+          available.geolocation = namespace.geolocation = false;
+          signal.flag = ARProgrezz.Flags.SUCCESS;
+        }
+      );
+      ARProgrezz.Utils.waitCallback(signal, end_function);
+    }
+    else {
+      
+      available.geolocation = namespace.geolocation = false;
+      end_function();
+    }
   }
   
   /* TODO Completar código de las señales, y permitir activar o desactivar
@@ -52,7 +152,7 @@ ARProgrezz.Video = function () {
   function accessVideo(constraints) {
     
     // Función de acceso a los datos de vídeo
-    navigator.getUserMedia = ARProgrezz.Support.videoCamera();
+    navigator.getUserMedia = ARProgrezz.Support.accessVideo;
     
     // Obtención de datos de vídeo
     navigator.getUserMedia (
@@ -85,8 +185,8 @@ ARProgrezz.Video = function () {
       },
       
       // Error Callback
-      function(err) {
-        alert("Error: " + err);
+      function(error) {
+        alert("Error: " + error);
         video.flag = ARProgrezz.Flags.ERROR;
       }
     );
@@ -154,8 +254,8 @@ ARProgrezz.Video = function () {
     // Indicador del estado de acceso
     video = { flag: ARProgrezz.Flags.WAIT };
     
-    // Comprobación de soporte de acceso a la cámara de vídeo
-    if (!ARProgrezz.Support.checkVideoCamera()) {
+    // Comprobación de soporte de acceso a la cámara de vídeo y al giroscopio
+    if (ARProgrezz.Support.video && ARProgrezz.Support.gyroscope) {
       
       // Acceso al vídeo de la cámara trasera
       accessRearCamera();
@@ -368,34 +468,48 @@ ARProgrezz.Viewer = function (settings) {
     
     // Actualizando ajustes
     if (settings)
-    updateSettings(settings);
+      updateSettings(settings);
     
-    // Inicializar realidad aumentada
-    initAR( function () {
+    // Comprobando soporte de tecnologías
+    var checked = { flag: ARProgrezz.Flags.WAIT };
+    ARProgrezz.Support.check( function () {
+      checked.flag = ARProgrezz.Flags.SUCCESS;
+    });
+    
+    // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
+    ARProgrezz.Utils.waitCallback(checked, function () {
       
-      // Creación del vídeo
-      ar_video = new ARProgrezz.Video();
+      // TODO Quitar chivatos
+      console.log(ARProgrezz.Support);
       
-      // Ejecución tras inicializar vídeo
-      ar_video.onSuccess = function() {
+      // Inicializar realidad aumentada
+      initAR( function () {
+        
+        // Creación del vídeo
+        ar_video = new ARProgrezz.Video();
+        
+        // Ejecución tras inicializar vídeo
+        ar_video.onSuccess = function() {
+            
+          // Evento de ajuste de dimensiones y posición del visor
+          adjustViewer();
+          window.addEventListener( 'orientationchange', adjustViewer, false );
+          window.addEventListener( 'resize', adjustViewer, false );
           
-        // Evento de ajuste de dimensiones y posición del visor
-        adjustViewer();
-        window.addEventListener( 'orientationchange', adjustViewer, false );
+          // Iniciar actualizado de la escena
+          playAnimation();
+          
+          // Haciendo efectiva la inicialización
+          inited = true;
+          
+          // Función a ejecutar tras la inicialización
+          if (scope.onInit)
+            scope.onInit()
+        };
         
-        // Iniciar actualizado de la escena
-        playAnimation();
-        
-        // Haciendo efectiva la inicialización
-        inited = true;
-        
-        // Función a ejecutar tras la inicialización
-        if (scope.onInit)
-          scope.onInit()
-      };
-      
-      // Inicializar vídeo
-      ar_video.initVideo();
+        // Inicializar vídeo
+        ar_video.initVideo();
+      });
     });
   }
   
