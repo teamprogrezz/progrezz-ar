@@ -124,6 +124,15 @@ ARProgrezz.Support = {};
     }
   }
   
+  /* Comprobación de soporte de WebGL */
+  namespace.webglAvailable = function() {
+    try {
+      var canvas = document.createElement( 'canvas' );
+      return !!( window.WebGLRenderingContext && ( canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' ) ) ); 
+    } 
+    catch ( e ) { return false; } 
+  }
+  
   /* TODO Completar código de las señales, y permitir activar o desactivar
   this.Signals = function() {
     
@@ -148,7 +157,18 @@ ARProgrezz.Video = function () {
   
   var video = null; // Objeto para indicar el estado de la inicialización
   
-  /* Función de acceso al vídeo */
+  /* Redimensionado del vídeo */
+  this.updateSize = function() {
+    
+    if (scope.arVideo instanceof ARProgrezz.Video.Panorama)
+      scope.arVideo.updateSize();
+    else {
+      scope.arVideo.width = window.innerWidth;
+      scope.arVideo.height = window.innerHeight;
+    }
+  }
+
+  /* Acceso al vídeo */
   function accessVideo(constraints) {
     
     // Función de acceso a los datos de vídeo
@@ -221,35 +241,9 @@ ARProgrezz.Video = function () {
     }
     
   }
-      // TODO Generalizar esto en support
-      // Función para la comprobación de soporte de WebGL
-      function webglAvailable() { 
-        try {
-          var canvas = document.createElement( 'canvas' );
-          return !!( window.WebGLRenderingContext && ( canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' ) ) ); 
-        } 
-        catch ( e ) { return false; } 
-      }
-      // TODO Poner donde corresponda, crear una clase si es necesario
-      var camera, scene, renderer, controls;
-      function animate() {
-        
-        requestAnimationFrame( animate );
-        if (controls)
-          controls.update();
-				renderer.render( scene, camera );
-      }
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
 
   /* Inicialización del vídeo del visor */
-  this.initVideo = function() {
+  this.initVideo = function(scene) {
     
     // Indicador del estado de acceso
     video = { flag: ARProgrezz.Flags.WAIT };
@@ -262,67 +256,60 @@ ARProgrezz.Video = function () {
       
       // Esperando a que el vídeo se cargue correctamente
       ARProgrezz.Utils.waitCallback(video, scope.onSuccess);
-      
     }
     else {
-      var mesh;
-      // TODO Tener cuidado con la rutas, hacerlo como en LinkSnake
-      // TODO Completar para que funcione a modo de vídeo en el resize y comentar correctamente
-      camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );
-      camera.target = new THREE.Vector3( 0, 0, 0 );
-      controls = new THREE.DeviceOrientationControls(camera);
-      scene = new THREE.Scene();
-
-      var geometry = new THREE.SphereGeometry( 500, 60, 40 );
-      geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
-      var texture = THREE.ImageUtils.loadTexture( 'img/textures/equirectangular_city.jpg' );
-      texture.minFilter = THREE.LinearFilter;
-      var material = new THREE.MeshBasicMaterial({    
-          map: texture
-      });
-      mesh = new THREE.Mesh( geometry, material );
       
-      scene.add( mesh );
-
-      
-      // Creación del renderizador
-      if ( webglAvailable() ) // WebGL soportado -> Renderizador WebGL
-        renderer = new THREE.WebGLRenderer(); 
-      else // WebGL no soportado -> Renderizador Canvas
-        renderer = new THREE.CanvasRenderer();
-      
-      renderer.setPixelRatio( window.devicePixelRatio );
-      renderer.setSize( window.innerWidth, window.innerHeight );
-      renderer.domElement.setAttribute("style", "position: absolute; left: 0px; top: 0px; z-index: -1");
-      document.body.appendChild( renderer.domElement );
-      
-      scope.arVideo = renderer.domElement;
-      // TODO Actualizar esto al redimensionar
-      scope.arVideo.videoWidth = window.innerWidth;
-      scope.arVideo.videoHeight = window.innerHeight;
-      window.addEventListener( 'resize', onWindowResize, false );
-      
-      animate();
-      
-      if (ARProgrezz.Support.gyroscope) {
-        //code
-      }
-      
-      /*scope.arVideo = document.createElement("img");
-      scope.arVideo.setAttribute("style", "position: absolute; left: 0px; top: 0px; z-index: -1");
-      scope.arVideo.src = 'img/background_video.jpg';
-      scope.arVideo.width = window.innerWidth;
-      scope.arVideo.height = window.innerHeight;
-      
-      document.body.appendChild(scope.arVideo);*/
+      // Creando panorama como alternativa al vídeo
+      scope.arVideo = new ARProgrezz.Video.Panorama(scene);
       
       if (scope.onSuccess)
         scope.onSuccess();
-      
     }
   }
   
 };
+
+/* Alternativa al vídeo: panorama a partir de imagen equirectangular */
+ARProgrezz.Video.Panorama = function(scene) {
+  
+  var scope = this; // Ámbito
+  
+  // Dimensiones del panorama y del "vídeo"
+  this.width = window.innerWidth;
+  this.height = window.innerHeight;
+  this.videoWidth = window.innerWidth;
+  this.videoHeight = window.innerHeight;
+  
+  // Constantes
+  var RADIUS = 3000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
+  var WIDTH_SEGMENTS = 120, HEIGHT_SEGMENTS = 80;
+  
+  var p_scene = scene; // Escena 3D del visor
+  
+  /* Redimensionado del "vídeo" */
+  this.updateSize = function() {
+    
+    scope.videoWidth = scope.width = window.innerWidth;
+    scope.videoHeight = scope.height = window.innerHeight;
+  }
+  
+  /* Constructor */
+  function init() {
+    
+    var geometry = new THREE.SphereGeometry( RADIUS, WIDTH_SEGMENTS, HEIGHT_SEGMENTS );
+    geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+
+    var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + '/img/textures/equirectangular_city.jpg' );
+    texture.minFilter = THREE.LinearFilter;
+    
+    var material = new THREE.MeshBasicMaterial({ map: texture });
+    
+    var panorama = new THREE.Mesh( geometry, material );
+    p_scene.add(panorama);
+  }
+  
+  init();
+}
 
 /* Visor de realidad aumentada */
 ARProgrezz.Viewer = function (settings) {
@@ -342,16 +329,20 @@ ARProgrezz.Viewer = function (settings) {
   
   /* Constantes globales */
   var ORIENTATION_DELAY = 300 // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
-  var GAME_FOV = 60; // (º) Campo de visión
+  var GAME_FOV = 75; // (º) Campo de visión
   // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
-  var MIN_VISION = 0.1, MAX_VISION = 1000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
+  var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
   // TODO Los objetos deben crearse a parte, quitar de aquí
   var OBJECT_RADIUS = 1;
+  var ROTATION = 0.02;
   
   /* Variables globales */
+  var clock = new THREE.Clock(); // Reloj para la obtención de tiempo entre frames (delta)
+  var delta; // Tiempo entre frames (ms)
   var real_height = 0; // Alto real del visor (incluyendo espacio no utilizado por el vídeo)
   var ar_video; // Vídeo del visor - ARProgrezz.Video
   // TODO Colocar lo de realidad aumentada donde corresponda
+  // TODO Evento de ratón y toque en controls
   var ar_scene, ar_camera, ar_renderer, ar_player, ar_controls; // Escena de realidad aumentada
   var objects = []; // Lista de objetos
   
@@ -381,7 +372,7 @@ ARProgrezz.Viewer = function (settings) {
       // TODO Cambiar en el futuro, para la visión estereoscópica
     }
     else {
-      alert("Error: No se reconoce el modo seleccionado (" + ar.settings.mode + ")")
+      alert("Error: No se reconoce el modo seleccionado (" + ar.settings.mode + ")");
     }
   }
   
@@ -394,24 +385,14 @@ ARProgrezz.Viewer = function (settings) {
     // Inicializando al jugador
     ar_player = initPlayer();
     
-    // TODO Generalizar esto utilizando ARProgrezz.Support
-    // Función para la comprobación de soporte de WebGL
-    function webglAvailable() { 
-      try {
-        var canvas = document.createElement( 'canvas' );
-        return !!( window.WebGLRenderingContext && ( canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' ) ) ); 
-      } 
-      catch ( e ) { return false; } 
-    } 
-    
     // Creación del renderizador
     var options = { alpha: true };
-    if ( webglAvailable() ) // WebGL soportado -> Renderizador WebGL
+    if (ARProgrezz.Support.webglAvailable()) // WebGL soportado -> Renderizador WebGL
       ar_renderer = new THREE.WebGLRenderer(options); 
     else // WebGL no soportado -> Renderizador Canvas
       ar_renderer = new THREE.CanvasRenderer(options);
-    
     ar_renderer.setClearColor( 0x000000, 0 );
+    ar_renderer.setPixelRatio( window.devicePixelRatio );
     document.body.appendChild(ar_renderer.domElement);
     
     // Continuando con la inicialización
@@ -422,20 +403,24 @@ ARProgrezz.Viewer = function (settings) {
   function updateObjects() {
     
     for (o in objects)
-      objects[o].rotation.y += 0.02;
+      objects[o].rotation.y += 0.02 * delta;
   }
   
   /* Iniciar actualización de la escena */
   function playAnimation() {
     
     function render() {
+      
       requestAnimationFrame(render);
       
-      updateObjects();
+      delta = clock.getDelta(); // Obteniendo tiempo entre frames (delta)
       
-      ar_controls.update();
-      ar_renderer.render(ar_scene,ar_camera);
+      updateObjects(); // Actualizando objetos
+      ar_controls.update(); // Actualizando cámara
+      
+      ar_renderer.render(ar_scene, ar_camera); // Renderizado
     }
+    
     render();
   }
   
@@ -445,8 +430,8 @@ ARProgrezz.Viewer = function (settings) {
     setTimeout(function() {
       
       // Tamaño del vídeo
-      ar_video.arVideo.width = window.innerWidth;
-      ar_video.arVideo.height = real_height = window.innerHeight;
+      ar_video.updateSize();
+      real_height = ar_video.arVideo.height;
       
       // Calculando tamaño real del visor de acuerdo al vídeo
       var viewer_ratio = Math.min(ar_video.arVideo.width / ar_video.arVideo.videoWidth, ar_video.arVideo.height / ar_video.arVideo.videoHeight);
@@ -455,10 +440,12 @@ ARProgrezz.Viewer = function (settings) {
       
       // Calculando relación de aspecto
       ar_camera.aspect = scope.viewerWidth / scope.viewerHeight;
+      ar_camera.updateProjectionMatrix();
       
       // Tamaño y posición de la escena
       ar_renderer.domElement.setAttribute("style", "display: block; margin: auto; padding-top: " + Math.trunc((real_height - scope.viewerHeight) / 2.0) + "px;");
       ar_renderer.setSize(scope.viewerWidth, scope.viewerHeight);
+      ar_renderer.setPixelRatio( window.devicePixelRatio );
       
     }, ORIENTATION_DELAY);
   }
@@ -480,7 +467,7 @@ ARProgrezz.Viewer = function (settings) {
     ARProgrezz.Utils.waitCallback(checked, function () {
       
       // TODO Quitar chivatos
-      console.log(ARProgrezz.Support);
+      alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
       
       // Inicializar realidad aumentada
       initAR( function () {
@@ -508,7 +495,7 @@ ARProgrezz.Viewer = function (settings) {
         };
         
         // Inicializar vídeo
-        ar_video.initVideo();
+        ar_video.initVideo(ar_scene);
       });
     });
   }
@@ -519,7 +506,7 @@ ARProgrezz.Viewer = function (settings) {
     // TODO Utilizar la latitud y la longitud para asignar la posición al objeto
     // TODO Dibujar un objeto de verdad y reestructurar esto para que haga lo que debería hacer
     
-    var texture = THREE.ImageUtils.loadTexture( 'img/textures/sold_to_spring.jpg' );
+    var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + '/img/textures/sold_to_spring.jpg' );
 		texture.anisotropy = ar_renderer.getMaxAnisotropy();
 
 		var material = new THREE.MeshBasicMaterial( { map: texture } );

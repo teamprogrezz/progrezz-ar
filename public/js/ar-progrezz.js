@@ -13,7 +13,7 @@ ARProgrezz.Utils = {};
   
   var WAIT_DELAY = 200 // (ms) Retardo de espera a Callbacks
 
-  /* Función de espera de un Callback */
+  /* Espera de un Callback */
   namespace.waitCallback = function(obj, end_function) {
     
     if (!end_function)
@@ -25,7 +25,7 @@ ARProgrezz.Utils = {};
       end_function();
   }
   
-  /* Función para mostrar texto en pantalla (Mobile Debug) */
+  /* Mostrar texto en pantalla (Mobile Debug) */
   namespace.debugText = function (text) {
 	
     var p = document.querySelector("p");
@@ -38,6 +38,15 @@ ARProgrezz.Utils = {};
     }
     var n_text = document.createTextNode(text);
     p.appendChild(n_text);
+  }
+  
+  /* Obtener ruta del directorio raíz del módulo */
+  namespace.rootDirectory = function () {
+    
+    var scripts = document.getElementsByTagName("script");
+    var path = scripts[scripts.length-2].src; // TODO Revisar con cuidado, porque se supone que debería ser el último cargado, no el penúltimo
+    var name = path.split("/").pop();
+    return path.replace("/js/" + name, "");
   }
   
 })(ARProgrezz.Utils);
