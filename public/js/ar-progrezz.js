@@ -1,4 +1,4 @@
-ARProgrezz = {};
+ARProgrezz = {}; // Módulo de realidad aumentada
 
 /* Indicadores de estado */
 ARProgrezz.Flags = {
