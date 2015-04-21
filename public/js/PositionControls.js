@@ -13,6 +13,12 @@ ARProgrezz.PositionControls = function (camera) {
   this.deviceOrientation = {}; // Orientación del dispositivo: ángulos alpha, beta y gamma, que representan un sistema de rotación de ángulos de Tait-Bryan según la convención 'ZXY'
   this.screenOrientation = 0; // Orientación de la pantalla del dispositivo
   
+  var onMouseEvent = false;
+  var targetX = 0, targetY = 0;
+  var targetLon = 0, targetLat = 0;
+  var lon = 0, lat = 0;
+  var phi = 0, theta = 0;
+  
   // Geolocation
   this.firstTime = true; // TODO Comentar devidamente
   this.updating = false;
@@ -35,6 +41,36 @@ ARProgrezz.PositionControls = function (camera) {
     scope.screenOrientation = window.orientation || 0;
   }
   
+  /* Pulsación de ratón */
+  function onMouseDown( event ) {
+
+    event.preventDefault();
+
+    onMouseEvent = true;
+
+    targetX = event.clientX;
+    targetY = event.clientY;
+
+    targetLon = lon;
+    targetLat = lat;
+  }
+
+  /* Movimiento de ratón */
+  function onMouseMove( event ) {
+
+    if (onMouseEvent) {
+    // TODO Mirar a ver que es la longitud y la latitud, y el 0.1 establecerlo como velocidad, y usar delta time
+      lon = ( targetX - event.clientX ) * 0.1 + targetLon;
+      lat = ( event.clientY - targetY ) * 0.1 + targetLat;
+    }
+  }
+
+  /* Finalización de pulsación de ratón */
+  function onMouseUp( event ) {
+
+    onMouseEvent = false;
+  }
+  
   /* Actualizando la cámara */
   this.update = function () {
 
@@ -45,8 +81,16 @@ ARProgrezz.PositionControls = function (camera) {
     var beta = scope.deviceOrientation.beta  ? THREE.Math.degToRad( scope.deviceOrientation.beta.toFixed(5) ) : 0; // X
     var gamma = scope.deviceOrientation.gamma ? THREE.Math.degToRad( scope.deviceOrientation.gamma.toFixed(5) ) : 0; // Y
     var orient = scope.screenOrientation ? THREE.Math.degToRad( scope.screenOrientation ) : 0; // Orientation
-
-    setObjectQuaternion(scope.camera.quaternion, alpha, beta, gamma, orient);
+    // TODO Hacer una cosa u otra en función del giroscopio y mirar que cojones se hace realmente
+    //setObjectQuaternion(scope.camera.quaternion, alpha, beta, gamma, orient);
+    lat = Math.max( - 85, Math.min( 85, lat ) );
+    phi = THREE.Math.degToRad( 90 - lat );
+    theta = THREE.Math.degToRad( lon );
+    
+    scope.camera.target.x = 3000 * Math.sin( phi ) * Math.cos( theta );
+    scope.camera.target.y = 3000 * Math.cos( phi );
+    scope.camera.target.z = 3000 * Math.sin( phi ) * Math.sin( theta );
+    scope.camera.lookAt( camera.target );
   };
   
   // TODO Cambiar esto de forma que tenga sentido para mi
@@ -178,7 +222,11 @@ ARProgrezz.PositionControls = function (camera) {
 
     window.addEventListener( 'orientationchange', onScreenOrientationChange, false );
     window.addEventListener( 'deviceorientation', onDeviceOrientationChange, false );
-
+    // TODO Poner solo si no funciona el giroscopio y añadir los de toque
+    document.addEventListener( 'mousedown', onMouseDown, false );
+    document.addEventListener( 'mousemove', onMouseMove, false );
+    document.addEventListener( 'mouseup', onMouseUp, false );
+    camera.target = new THREE.Vector3( 0, 0, 0 ); // TODO Cambiar esto, usar otra variable
     scope.enabled = true;
   };
 

@@ -329,12 +329,12 @@ ARProgrezz.Viewer = function (settings) {
   
   /* Constantes globales */
   var ORIENTATION_DELAY = 300 // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
-  var GAME_FOV = 75; // (º) Campo de visión
+  var GAME_FOV = 60; // (º) Campo de visión
   // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
   var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
   // TODO Los objetos deben crearse a parte, quitar de aquí
   var OBJECT_RADIUS = 1;
-  var ROTATION = 0.02;
+  var ROTATION = 0.4;
   
   /* Variables globales */
   var clock = new THREE.Clock(); // Reloj para la obtención de tiempo entre frames (delta)
@@ -361,9 +361,7 @@ ARProgrezz.Viewer = function (settings) {
       ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
       
       // Creación del controlador de posición y orientación del jugador
-      // TODO Cambiar por ARProgrezz.PositionControls, y añadir la geolocalización
-      //ar_controls = new ARProgrezz.PositionControls(ar_camera);
-      ar_controls = new THREE.DeviceOrientationControls(ar_camera);
+      ar_controls = new ARProgrezz.PositionControls(ar_camera);
       
       return {vision: ar_camera, controls: ar_controls};
     }
@@ -403,7 +401,7 @@ ARProgrezz.Viewer = function (settings) {
   function updateObjects() {
     
     for (o in objects)
-      objects[o].rotation.y += 0.02 * delta;
+      objects[o].rotation.y += ROTATION * delta;
   }
   
   /* Iniciar actualización de la escena */
