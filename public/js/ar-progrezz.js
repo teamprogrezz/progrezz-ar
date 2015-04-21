@@ -1,4 +1,4 @@
-ARProgrezz = {};
+// TODO Poner aquí lo de ARProgrezz
 
 /* Indicadores de estado */
 ARProgrezz.Flags = {
@@ -188,9 +188,7 @@ ARProgrezz.Viewer = function (settings) {
       ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
       
       // Creación del controlador de posición y orientación del jugador
-      // TODO Cambiar por ARProgrezz.PositionControls, y añadir la geolocalización
-      //ar_controls = new ARProgrezz.PositionControls(ar_camera);
-      ar_controls = new THREE.DeviceOrientationControls(ar_camera);
+      ar_controls = new ARProgrezz.PositionControls(ar_camera);
       
       return {vision: ar_camera, controls: ar_controls};
     }
