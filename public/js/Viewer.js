@@ -100,7 +100,7 @@ ARProgrezz.Support = {};
   
   /* Acceso a la geolocalización */
   function checkGeolocation(end_function) {
-    
+    // TODO Si no encuentra la geolocalización puede quedarse años, ponerle un límite de espera
     if (navigator.geolocation) {
       
       var signal = { flag: ARProgrezz.Flags.WAIT };
@@ -282,7 +282,7 @@ ARProgrezz.Video.Panorama = function(scene) {
   
   // Constantes
   var RADIUS = 3000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
-  var WIDTH_SEGMENTS = 120, HEIGHT_SEGMENTS = 80;
+  var WIDTH_SEGMENTS = 60, HEIGHT_SEGMENTS = 40;
   
   var p_scene = scene; // Escena 3D del visor
   
