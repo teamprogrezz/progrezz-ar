@@ -472,6 +472,9 @@ ARProgrezz.Viewer = function (settings) {
     // Estableciendo pantalla completa
     document.addEventListener("click", ARProgrezz.Utils.fullScreen, false);
     
+    // Bloqueando orientación apaisada
+    ARProgrezz.Utils.lockOrientation();
+    
     // Iniciando preloader
     var preloader = new ARProgrezz.Preloader();
     preloader.initLoad();

@@ -69,4 +69,19 @@ ARProgrezz.Utils = {};
 	    requestFullScreen.call(screen);
   }
   
+  /* Bloquear la orientación del dispositivo */
+  namespace.lockOrientation = function() {
+    
+    screen.lockOrientation = screen.lockOrientation || screen.webkitLockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
+    
+    // TODO Quitar chivatos
+    if (screen.lockOrientation) {
+      screen.lockOrientation('landscape');
+      alert("Orientación bloqueada");
+    }
+    else {
+      alert("No se puede bloquear la orientación");
+    }
+  }
+  
 })(ARProgrezz.Utils);
