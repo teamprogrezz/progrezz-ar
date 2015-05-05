@@ -13,6 +13,9 @@ ARProgrezz.Support = {};
   // Función de acceso a vídeo
   namespace.accessVideo = null;
   
+  // Vídeo stream
+  namespace.videoStream = null;
+  
   // Tecnologías soportadas
   var available = {
     video: false,
@@ -47,6 +50,7 @@ ARProgrezz.Support = {};
         {video: true, audio: false},
         function(localMediaStream) {
           namespace.video = available.video = true;
+          namespace.videoStream = localMediaStream;
           signal.flag = ARProgrezz.Flags.SUCCESS;
         },
         function(error) {
@@ -183,6 +187,9 @@ ARProgrezz.Video = function () {
     
     // Función de acceso a los datos de vídeo
     navigator.getUserMedia = ARProgrezz.Support.accessVideo;
+
+    // TODO Utilizar el vídeo ya pedido, pedirlo correctamente en Support, y no hacerlo aquí
+    //scope.arVideo.src = window.URL.createObjectURL(ARProgrezz.Support.videoStream);
     
     // Obtención de datos de vídeo
     navigator.getUserMedia (
@@ -462,6 +469,9 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicializar visor de realidad aumentada */
   this.initViewer = function(settings) {
     
+    // Estableciendo pantalla completa
+    document.addEventListener("click", ARProgrezz.Utils.fullScreen, false);
+    
     // Iniciando preloader
     var preloader = new ARProgrezz.Preloader();
     preloader.initLoad();
@@ -481,7 +491,7 @@ ARProgrezz.Viewer = function (settings) {
       
       // TODO Quitar chivatos
       alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
-      ARProgrezz.Support.gyroscope = false;
+      //ARProgrezz.Support.gyroscope = false;
       // Inicializar realidad aumentada
       initAR( function () {
         

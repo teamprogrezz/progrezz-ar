@@ -26,7 +26,7 @@ ARProgrezz.Utils = {};
   }
   
   /* Mostrar texto en pantalla (Mobile Debug) */
-  namespace.debugText = function (text) {
+  namespace.debugText = function(text) {
 	
     var p = document.querySelector("p");
     if(!p) {
@@ -41,12 +41,22 @@ ARProgrezz.Utils = {};
   }
   
   /* Obtener ruta del directorio raíz del módulo */
-  namespace.rootDirectory = function () {
+  namespace.rootDirectory = function() {
     
     var scripts = document.getElementsByTagName("script");
     var path = scripts[scripts.length-2].src; // TODO Revisar con cuidado, porque se supone que debería ser el último cargado, no el penúltimo
     var name = path.split("/").pop();
     return path.replace("/js/" + name, "");
+  }
+  
+  /* Establecer el navegador en pantalla completa */
+  namespace.fullScreen = function() {
+    
+    var screen = document.documentElement;
+    var requestFullScreen = screen.requestFullScreen || screen.webkitRequestFullScreen || screen.mozRequestFullScreen || screen.msRequestFullScreen;
+    
+    if (requestFullScreen)
+	    requestFullScreen.call(screen);
   }
   
 })(ARProgrezz.Utils);
