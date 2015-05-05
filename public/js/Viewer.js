@@ -3,6 +3,8 @@
 ARProgrezz.Support = {};
 (function(namespace){
   
+  var GEO_TIMEOUT = 8000 // (ms)
+  
   // Tecnologías activadas
   namespace.video = null;
   namespace.gyroscope = null;
@@ -115,6 +117,14 @@ ARProgrezz.Support = {};
           signal.flag = ARProgrezz.Flags.SUCCESS;
         }
       );
+      
+      setTimeout(function() {
+        if (signal.flag == ARProgrezz.Flags.WAIT) {
+          available.geolocation = namespace.geolocation = false;
+          signal.flag = ARProgrezz.Flags.SUCCESS;
+        }
+      }, GEO_TIMEOUT);
+      
       ARProgrezz.Utils.waitCallback(signal, end_function);
     }
     else {
@@ -281,8 +291,8 @@ ARProgrezz.Video.Panorama = function(scene) {
   this.videoHeight = window.innerHeight;
   
   // Constantes
-  var RADIUS = 3000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
-  var WIDTH_SEGMENTS = 60, HEIGHT_SEGMENTS = 40;
+  var RADIUS = 1000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
+  var WIDTH_SEGMENTS = 45, HEIGHT_SEGMENTS = 30;
   
   var p_scene = scene; // Escena 3D del visor
   
@@ -414,6 +424,7 @@ ARProgrezz.Viewer = function (settings) {
       delta = clock.getDelta(); // Obteniendo tiempo entre frames (delta)
       
       updateObjects(); // Actualizando objetos
+      
       ar_controls.update(); // Actualizando cámara
       
       ar_renderer.render(ar_scene, ar_camera); // Renderizado
@@ -451,6 +462,10 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicializar visor de realidad aumentada */
   this.initViewer = function(settings) {
     
+    // Iniciando preloader
+    var preloader = new ARProgrezz.Preloader();
+    preloader.initLoad();
+    
     // Actualizando ajustes
     if (settings)
       updateSettings(settings);
@@ -466,7 +481,7 @@ ARProgrezz.Viewer = function (settings) {
       
       // TODO Quitar chivatos
       alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
-      
+      ARProgrezz.Support.gyroscope = false;
       // Inicializar realidad aumentada
       initAR( function () {
         
@@ -475,7 +490,7 @@ ARProgrezz.Viewer = function (settings) {
         
         // Ejecución tras inicializar vídeo
         ar_video.onSuccess = function() {
-            
+          
           // Evento de ajuste de dimensiones y posición del visor
           adjustViewer();
           window.addEventListener( 'orientationchange', adjustViewer, false );
@@ -490,6 +505,9 @@ ARProgrezz.Viewer = function (settings) {
           // Función a ejecutar tras la inicialización
           if (scope.onInit)
             scope.onInit()
+          
+          // Eliminando preloader
+          preloader.endLoad();
         };
         
         // Inicializar vídeo

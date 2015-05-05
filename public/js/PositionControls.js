@@ -13,7 +13,8 @@ ARProgrezz.PositionControls = function (camera) {
   this.deviceOrientation = {}; // Orientación del dispositivo: ángulos alpha, beta y gamma, que representan un sistema de rotación de ángulos de Tait-Bryan según la convención 'ZXY'
   this.screenOrientation = 0; // Orientación de la pantalla del dispositivo
   
-  var ROTATION_SPEED = 0.1; // Determina la velocidad de rotación de la cámara de acuerdo al desplazamiento en pantalla
+  var MOUSE_ROTATION_SPEED = 0.1; // Determina la velocidad de rotación de la cámara de acuerdo al desplazamiento del ratón en pantalla
+  var TOUCH_ROTATION_SPEED = 0.15; // Determina la velocidad de rotación de la cámara de acuerdo al desplazamiento de toque en pantalla
   
   var onTouchEvent = false; // Evento de toque activo
   var onMouseEvent = false; // Evento de ratón activo
@@ -24,7 +25,7 @@ ARProgrezz.PositionControls = function (camera) {
   var phi = 0, theta = 0; // Grados que determinan rotación de la cámara
   
   // Geolocation
-  this.firstTime = true; // TODO Comentar devidamente
+  this.firstTime = true; // TODO Comentar debidamente
   this.updating = false;
   this.originLatitude = 0;
   this.originLongitude = 0;
@@ -64,9 +65,9 @@ ARProgrezz.PositionControls = function (camera) {
     
     event.preventDefault();
     
-    if (onMouseEvent) {
-      lon = ( targetX - event.targetTouches[0].clientX ) * ROTATION_SPEED + targetLon;
-      lat = ( event.targetTouches[0].clientY - targetY ) * ROTATION_SPEED + targetLat;
+    if (onTouchEvent) {
+      lon = ( targetX - event.targetTouches[0].clientX ) * TOUCH_ROTATION_SPEED + targetLon;
+      lat = ( event.targetTouches[0].clientY - targetY ) * TOUCH_ROTATION_SPEED + targetLat;
     }
   }
 
@@ -98,8 +99,8 @@ ARProgrezz.PositionControls = function (camera) {
     event.preventDefault();
     
     if (onMouseEvent) {
-      lon = ( targetX - event.clientX ) * ROTATION_SPEED + targetLon;
-      lat = ( event.clientY - targetY ) * ROTATION_SPEED + targetLat;
+      lon = ( targetX - event.clientX ) * MOUSE_ROTATION_SPEED + targetLon;
+      lat = ( event.clientY - targetY ) * MOUSE_ROTATION_SPEED + targetLat;
     }
   }
 
@@ -117,20 +118,26 @@ ARProgrezz.PositionControls = function (camera) {
     if (!scope.enabled)
       return;
     
-    var alpha = scope.deviceOrientation.alpha ? THREE.Math.degToRad( scope.deviceOrientation.alpha.toFixed(5) ) : 0; // Z
-    var beta = scope.deviceOrientation.beta  ? THREE.Math.degToRad( scope.deviceOrientation.beta.toFixed(5) ) : 0; // X
-    var gamma = scope.deviceOrientation.gamma ? THREE.Math.degToRad( scope.deviceOrientation.gamma.toFixed(5) ) : 0; // Y
-    var orient = scope.screenOrientation ? THREE.Math.degToRad( scope.screenOrientation ) : 0; // Orientation
-    // TODO Hacer una cosa u otra en función del giroscopio y mirar que cojones se hace realmente
-    //setObjectQuaternion(scope.camera.quaternion, alpha, beta, gamma, orient);
-    lat = Math.max( - 85, Math.min( 85, lat ) );
-    phi = THREE.Math.degToRad( 90 - lat );
-    theta = THREE.Math.degToRad( lon );
-    
-    visionTarget.x = 3000 * Math.sin( phi ) * Math.cos( theta );
-    visionTarget.y = 3000 * Math.cos( phi );
-    visionTarget.z = 3000 * Math.sin( phi ) * Math.sin( theta );
-    scope.camera.lookAt( visionTarget );
+    if (ARProgrezz.Support.gyroscope) {
+      var alpha = scope.deviceOrientation.alpha ? THREE.Math.degToRad( scope.deviceOrientation.alpha.toFixed(5) ) : 0; // Z
+      var beta = scope.deviceOrientation.beta  ? THREE.Math.degToRad( scope.deviceOrientation.beta.toFixed(5) ) : 0; // X
+      var gamma = scope.deviceOrientation.gamma ? THREE.Math.degToRad( scope.deviceOrientation.gamma.toFixed(5) ) : 0; // Y
+      var orient = scope.screenOrientation ? THREE.Math.degToRad( scope.screenOrientation ) : 0; // Orientation
+      
+      setObjectQuaternion(scope.camera.quaternion, alpha, beta, gamma, orient);
+    }
+    else {
+      lat = Math.max( - 85, Math.min( 85, lat ) );
+      phi = THREE.Math.degToRad( 90 - lat );
+      theta = THREE.Math.degToRad( lon );
+      
+      visionTarget.x = 3000 * Math.sin( phi ) * Math.cos( theta );
+      visionTarget.y = 3000 * Math.cos( phi );
+      visionTarget.z = 3000 * Math.sin( phi ) * Math.sin( theta );
+      scope.camera.lookAt( visionTarget );
+      // TODO Mirar que cojones se hace realmente
+    }
+
   };
   
   // TODO Cambiar esto de forma que tenga sentido para mi
@@ -211,6 +218,14 @@ ARProgrezz.PositionControls = function (camera) {
     else {
       
       visionTarget = new THREE.Vector3( 0, 0, 0 ); // Objetivo inicial de la cámara
+      
+      // Inicialización de variables auxiliares
+      onTouchEvent = false;
+      onMouseEvent = false;
+      targetX = targetY = 0;
+      targetLon = targetLat = 0;
+      lon = lat = 0;
+      phi = theta = 0;
       
       /* Eventos de toque */
       document.addEventListener( 'touchstart', onTouchStart, false );

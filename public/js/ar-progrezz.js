@@ -11,7 +11,7 @@ ARProgrezz.Flags = {
 ARProgrezz.Utils = {};
 (function(namespace){
   
-  var WAIT_DELAY = 200 // (ms) Retardo de espera a Callbacks
+  var WAIT_DELAY = 200; // (ms) Retardo de espera a Callbacks
 
   /* Espera de un Callback */
   namespace.waitCallback = function(obj, end_function) {
