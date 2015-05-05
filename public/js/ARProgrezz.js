@@ -44,7 +44,17 @@ ARProgrezz.Utils = {};
   namespace.rootDirectory = function() {
     
     var scripts = document.getElementsByTagName("script");
-    var path = scripts[scripts.length-2].src; // TODO Revisar con cuidado, porque se supone que debería ser el último cargado, no el penúltimo
+    var path = null;
+    
+    for (var i = 0; i < scripts.length; i++) {
+      if (scripts[i].src != "")
+        path = scripts[i].src;
+      if (scripts[i].src.search("ARProgrezz.js") != -1) {
+        path = scripts[i].src;
+        break;
+      }
+    }
+    
     var name = path.split("/").pop();
     return path.replace("/js/" + name, "");
   }
