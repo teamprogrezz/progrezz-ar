@@ -483,6 +483,9 @@ ARProgrezz.Viewer = function (settings) {
           window.addEventListener( 'orientationchange', adjustViewer, false );
           window.addEventListener( 'resize', adjustViewer, false );
           
+          // Evento de selección de objetos
+          initObjectsEvent();
+          
           // Iniciar actualizado de la escena
           playAnimation();
           
@@ -521,5 +524,26 @@ ARProgrezz.Viewer = function (settings) {
     
     ar_scene.add(object);
   }
+  
+  // TODO Crear una clase si es necesario para los objetos y/o gestión de objetos, y poner esta función donde corresponda
+  function initObjectsEvent() {
+    window.addEventListener( 'mouseclick', onMouseClick, false );
+  }
+  // TODO Referencia: http://soledadpenades.com/articles/three-js-tutorials/object-picking/
+  var projector = new THREE.Projector();
+  var mouseVector = new THREE.Vector3();
+  
+  function onMouseClick(e) {
+    
+    mouseVector.x = 2 * (e.clientX / scope.viewerWidth) - 1;
+    mouseVector.y = 1 - 2 * (e.clientY / scope.viewerHeight);
+    
+    var raycaster = projector.pickingRay(mouseVector.clone(), ar_camera);
+    var intersects = raycaster.intersectObjects(objects);
+    for (var i = 0; i < intersects.length; i++) {
+      console.log(intersects[i]);
+    }
+  }
+
   
 };
