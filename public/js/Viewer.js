@@ -3,6 +3,8 @@
 ARProgrezz.Support = {};
 (function(namespace){
   
+  var GEO_TIMEOUT = 8000 // (ms)
+  
   // Tecnologías activadas
   namespace.video = null;
   namespace.gyroscope = null;
@@ -10,6 +12,9 @@ ARProgrezz.Support = {};
   
   // Función de acceso a vídeo
   namespace.accessVideo = null;
+  
+  // Vídeo stream
+  namespace.videoStream = null;
   
   // Tecnologías soportadas
   var available = {
@@ -45,6 +50,7 @@ ARProgrezz.Support = {};
         {video: true, audio: false},
         function(localMediaStream) {
           namespace.video = available.video = true;
+          namespace.videoStream = localMediaStream;
           signal.flag = ARProgrezz.Flags.SUCCESS;
         },
         function(error) {
@@ -100,7 +106,7 @@ ARProgrezz.Support = {};
   
   /* Acceso a la geolocalización */
   function checkGeolocation(end_function) {
-    
+    // TODO Si no encuentra la geolocalización puede quedarse años, ponerle un límite de espera
     if (navigator.geolocation) {
       
       var signal = { flag: ARProgrezz.Flags.WAIT };
@@ -115,6 +121,14 @@ ARProgrezz.Support = {};
           signal.flag = ARProgrezz.Flags.SUCCESS;
         }
       );
+      
+      setTimeout(function() {
+        if (signal.flag == ARProgrezz.Flags.WAIT) {
+          available.geolocation = namespace.geolocation = false;
+          signal.flag = ARProgrezz.Flags.SUCCESS;
+        }
+      }, GEO_TIMEOUT);
+      
       ARProgrezz.Utils.waitCallback(signal, end_function);
     }
     else {
@@ -173,6 +187,9 @@ ARProgrezz.Video = function () {
     
     // Función de acceso a los datos de vídeo
     navigator.getUserMedia = ARProgrezz.Support.accessVideo;
+
+    // TODO Utilizar el vídeo ya pedido, pedirlo correctamente en Support, y no hacerlo aquí
+    //scope.arVideo.src = window.URL.createObjectURL(ARProgrezz.Support.videoStream);
     
     // Obtención de datos de vídeo
     navigator.getUserMedia (
@@ -281,8 +298,8 @@ ARProgrezz.Video.Panorama = function(scene) {
   this.videoHeight = window.innerHeight;
   
   // Constantes
-  var RADIUS = 3000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
-  var WIDTH_SEGMENTS = 120, HEIGHT_SEGMENTS = 80;
+  var RADIUS = 1000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
+  var WIDTH_SEGMENTS = 45, HEIGHT_SEGMENTS = 30;
   
   var p_scene = scene; // Escena 3D del visor
   
@@ -329,12 +346,12 @@ ARProgrezz.Viewer = function (settings) {
   
   /* Constantes globales */
   var ORIENTATION_DELAY = 300 // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
-  var GAME_FOV = 75; // (º) Campo de visión
+  var GAME_FOV = 60; // (º) Campo de visión
   // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
   var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
   // TODO Los objetos deben crearse a parte, quitar de aquí
   var OBJECT_RADIUS = 1;
-  var ROTATION = 0.02;
+  var ROTATION = 0.4;
   
   /* Variables globales */
   var clock = new THREE.Clock(); // Reloj para la obtención de tiempo entre frames (delta)
@@ -361,9 +378,7 @@ ARProgrezz.Viewer = function (settings) {
       ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
       
       // Creación del controlador de posición y orientación del jugador
-      // TODO Cambiar por ARProgrezz.PositionControls, y añadir la geolocalización
-      //ar_controls = new ARProgrezz.PositionControls(ar_camera);
-      ar_controls = new THREE.DeviceOrientationControls(ar_camera);
+      ar_controls = new ARProgrezz.PositionControls(ar_camera);
       
       return {vision: ar_camera, controls: ar_controls};
     }
@@ -403,7 +418,7 @@ ARProgrezz.Viewer = function (settings) {
   function updateObjects() {
     
     for (o in objects)
-      objects[o].rotation.y += 0.02 * delta;
+      objects[o].rotation.y += ROTATION * delta;
   }
   
   /* Iniciar actualización de la escena */
@@ -416,6 +431,7 @@ ARProgrezz.Viewer = function (settings) {
       delta = clock.getDelta(); // Obteniendo tiempo entre frames (delta)
       
       updateObjects(); // Actualizando objetos
+      
       ar_controls.update(); // Actualizando cámara
       
       ar_renderer.render(ar_scene, ar_camera); // Renderizado
@@ -453,6 +469,16 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicializar visor de realidad aumentada */
   this.initViewer = function(settings) {
     
+    // Estableciendo pantalla completa
+    document.addEventListener("click", ARProgrezz.Utils.fullScreen, false);
+    
+    // Bloqueando orientación apaisada
+    ARProgrezz.Utils.lockOrientation();
+    
+    // Iniciando preloader
+    var preloader = new ARProgrezz.Preloader();
+    preloader.initLoad();
+    
     // Actualizando ajustes
     if (settings)
       updateSettings(settings);
@@ -468,7 +494,7 @@ ARProgrezz.Viewer = function (settings) {
       
       // TODO Quitar chivatos
       alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
-      
+      //ARProgrezz.Support.gyroscope = false;
       // Inicializar realidad aumentada
       initAR( function () {
         
@@ -477,7 +503,7 @@ ARProgrezz.Viewer = function (settings) {
         
         // Ejecución tras inicializar vídeo
         ar_video.onSuccess = function() {
-            
+          
           // Evento de ajuste de dimensiones y posición del visor
           adjustViewer();
           window.addEventListener( 'orientationchange', adjustViewer, false );
@@ -495,6 +521,9 @@ ARProgrezz.Viewer = function (settings) {
           // Función a ejecutar tras la inicialización
           if (scope.onInit)
             scope.onInit()
+          
+          // Eliminando preloader
+          preloader.endLoad();
         };
         
         // Inicializar vídeo
