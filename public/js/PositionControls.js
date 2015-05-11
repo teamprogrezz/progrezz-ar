@@ -329,7 +329,7 @@ ARProgrezz.PositionControls = function (camera) {
     }
   }
   
-  /* Desactivando geololización */
+  /* Desactivando geolocalización */
   this.disarmGeolocation = function() {
     
     

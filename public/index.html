@@ -17,6 +17,7 @@
     <script type="text/javascript" src="js/ARProgrezz.js"></script>
     <script type="text/javascript" src="js/Preloader.js"></script>
     <script type="text/javascript" src="js/PositionControls.js"></script>
+    <script type="text/javascript" src="js/Object.js"></script>
     <script type="text/javascript" src="js/Viewer.js"></script>
     
 </head>
@@ -25,7 +26,7 @@
   <script>
     var ARViewer = new ARProgrezz.Viewer();
     ARViewer.onInit = function() {
-      ARViewer.addObject(28.481745, -16.325330);
+      ARViewer.addObject(28.481745, -16.325330/*, function() { window.location.assign("http://www.w3schools.com") }*/);
     };
     ARViewer.initViewer();
   </script>
