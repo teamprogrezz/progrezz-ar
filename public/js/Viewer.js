@@ -148,13 +148,13 @@ ARProgrezz.Support = {};
   }
   
   /* TODO Completar código de las señales, y permitir activar o desactivar */
-  
   namespace.activateVideo = function() {
     console.log("Pinguino");
   }
   
   namespace.activateGeolocation = function() {
-    console.log("Pinguino");
+    // TODO Poner la carga, pues está desactivada la geolocalización y desactivarla en la actualización de los objetos
+    alert("No se puede desactivar la geolocalización");
   }
   
   namespace.activateGyroscope = function() {
@@ -180,7 +180,7 @@ ARProgrezz.Support = {};
         var signal_button = document.createElement("a");
         
         signals.appendChild(document.createElement("br"));
-        
+        console.log(signal_button);
         signal.setAttribute("style",
                             "border: outset 1px;" +
                             "margin: 2.5px;");
@@ -190,16 +190,70 @@ ARProgrezz.Support = {};
           case 0: // Geolocalización
             signal_type = ARProgrezz.Support.geolocation;
             signal.src = "img/icons/geolocation.png";
-            signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateGeolocation();');
+            signal.onmousedown = function() {
+              this.src = "img/icons/geolocation-white.png";
+            };
+            signal.onmouseup = function() {
+              this.src = "img/icons/geolocation.png";
+            };
+            signal.onmouseleave = function() {
+              this.src = "img/icons/geolocation.png";
+            };
+            signal.ontouchstart = function() {
+              this.src = "img/icons/geolocation-white.png";
+            };
+            signal.ontouchend = function() {
+              this.src = "img/icons/geolocation.png";
+            };
+            signal.ontouchcancel = function() {
+              this.src = "img/icons/geolocation.png";
+            };
+            signal_button.onclick = ARProgrezz.Support.activateGeolocation;
           break;
           case 1: // Giroscopio
             signal_type = ARProgrezz.Support.gyroscope;
             signal.src = "img/icons/gyroscope.png";
+            signal.onmousedown = function() {
+              this.src = "img/icons/gyroscope-white.png";
+            };
+            signal.onmouseup = function() {
+              this.src = "img/icons/gyroscope.png";
+            };
+            signal.onmouseleave = function() {
+              this.src = "img/icons/gyroscope.png";
+            };
+            signal.ontouchstart = function() {
+              this.src = "img/icons/gyroscope-white.png";
+            };
+            signal.ontouchend = function() {
+              this.src = "img/icons/gyroscope.png";
+            };
+            signal.ontouchcancel = function() {
+              this.src = "img/icons/gyroscope.png";
+            };
             signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateGyroscope();');
           break;
           case 2: // Vídeo
             signal_type = ARProgrezz.Support.video;
             signal.src = "img/icons/videocamera.png";
+            signal.onmousedown = function() {
+              this.src = "img/icons/videocamera-white.png";
+            };
+            signal.onmouseup = function() {
+              this.src = "img/icons/videocamera.png";
+            };
+            signal.onmouseleave = function() {
+              this.src = "img/icons/videocamera.png";
+            };
+            signal.ontouchstart = function() {
+              this.src = "img/icons/videocamera-white.png";
+            };
+            signal.ontouchend = function() {
+              this.src = "img/icons/videocamera.png";
+            };
+            signal.ontouchcancel = function() {
+              this.src = "img/icons/videocamera.png";
+            };
             signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateVideo();');
           break;
         }
@@ -207,7 +261,7 @@ ARProgrezz.Support = {};
         if (signal_type)
           signal.style.backgroundColor = "#55FC18";
         else
-          signal.style.backgroundColor = "#C4C4C4"; 
+          signal.style.backgroundColor = "#666666"; 
         
         signal_button.appendChild(signal);
         signals.appendChild(signal_button);
