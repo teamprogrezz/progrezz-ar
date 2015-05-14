@@ -8,10 +8,13 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
   var scope = this;
   
   /* Constantes */
-  var OBJECT_RADIUS = 1;
-  var ROTATION = 0.4;
-  var REDUCTION_BASE = 0.15;
-  var REDUCTION_ACCELERATION = 3;
+  var OBJECT_RADIUS = 1; // Radio del objeto
+  var ROTATION = 0.4; // Velocidad de rotación del objeto
+  var REDUCTION_BASE = 0.15; // Constante que indica la reducción de escalan del objeto
+  var REDUCTION_ACCELERATION = 3; // Determina el aumento de velocidad en la reducción de escala del objeto
+  var COLOR_DELAY = 250; // Tiempo (ms) que permanece el objeto con el color que indica selección
+  var COLOR_DEFAULT = 0xffffff; // Color por defecto del objeto
+  var COLOR_SELECT = 0xff0000; // Color de selección del objeto
   
   /* Atributos */
   this.threeObject; // Objeto de Three.js
@@ -24,14 +27,19 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
   /* Seleccionar el objeto */
   this.select = function() {
     
-    scope.threeObject.material.color.setRGB( 1, 0, 0 );
+    if (scope.selected && scope.collectable)
+      return;
+    
+    scope.threeObject.material.color.setHex(COLOR_SELECT);
   };
   
   /* Deseleccionar el objeto */
   this.unselect = function() {
     
     scope.selected = true;
-    scope.threeObject.material.color.setRGB( 1, 1, 1 );
+    setTimeout(function() {
+      scope.threeObject.material.color.setHex(COLOR_DEFAULT);
+    }, COLOR_DELAY);
     scope.onSelect();
   };
   
