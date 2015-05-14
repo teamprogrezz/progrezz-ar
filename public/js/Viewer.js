@@ -599,11 +599,20 @@ ARProgrezz.Viewer = function (settings) {
   }
   
   /* Añadir objeto geolocalizado a la escena del visor */
-  this.addObject = function(latitude, longitude, onSelect) {
+  this.addObject = function(options) {
     
-    // TODO Pasar los parámetros como un objeto
+    var object;
+    
     // TODO Utilizar la latitud y la longitud para asignar la posición al objeto
-    var object = new ARProgrezz.Object.Basic(latitude, longitude, onSelect);
+    switch(options.type) {
+      case 'basic':
+        object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect);
+      break;
+      default:
+        console.log("Error: Tipo de objeto '" + options.type + "' desconocido");
+        return;
+      break;
+    }
     
     objects.add(object.threeObject);
   }

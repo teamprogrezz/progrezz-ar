@@ -24,11 +24,23 @@
 
 <body>
   <script>
+    
     var ARViewer = new ARProgrezz.Viewer();
+    
     ARViewer.onInit = function() {
-      ARViewer.addObject(28.481745, -16.325330/*, function() { window.location.assign("http://www.w3schools.com") }*/);
+      
+      var options = {
+        coords: { latitude: 28.481745, longitude: -16.325330 },
+        type: 'basic',
+        /*onSelect: function() { window.location.assign("http://www.w3schools.com") },*/
+        collectable: true
+      }
+      
+      ARViewer.addObject(options);
     };
+    
     ARViewer.initViewer();
+    
   </script>
 </body>
 
