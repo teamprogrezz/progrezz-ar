@@ -17,17 +17,30 @@
     <script type="text/javascript" src="js/ARProgrezz.js"></script>
     <script type="text/javascript" src="js/Preloader.js"></script>
     <script type="text/javascript" src="js/PositionControls.js"></script>
+    <script type="text/javascript" src="js/Object.js"></script>
     <script type="text/javascript" src="js/Viewer.js"></script>
     
 </head>
 
 <body>
   <script>
+    
     var ARViewer = new ARProgrezz.Viewer();
+    
     ARViewer.onInit = function() {
-      ARViewer.addObject(28.481745, -16.325330);
+      
+      var options = {
+        coords: { latitude: 28.481745, longitude: -16.325330 },
+        type: 'basic',
+        /*onSelect: function() { window.location.assign("http://www.w3schools.com") },*/
+        collectable: true
+      }
+      
+      ARViewer.addObject(options);
     };
+    
     ARViewer.initViewer();
+    
   </script>
 </body>
 

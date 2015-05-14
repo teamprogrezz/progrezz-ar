@@ -162,6 +162,9 @@ ARProgrezz.Support = {};
   }
   
   namespace.Signals = function() {
+  // TODO Comprobar en orden: Geolocalización, giroscopio y vídeo, si no hay geolocalización: se acabó, y si no hay giroscopio, no comprobar vídeo
+  
+  /* TODO Completar código de las señales, y permitir activar o desactivar */
     
     var scope = this;
     
@@ -463,9 +466,6 @@ ARProgrezz.Viewer = function (settings) {
   var GAME_FOV = 60; // (º) Campo de visión
   // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
   var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
-  // TODO Los objetos deben crearse a parte, quitar de aquí
-  var OBJECT_RADIUS = 1;
-  var ROTATION = 0.4;
   
   /* Variables globales */
   var clock = new THREE.Clock(); // Reloj para la obtención de tiempo entre frames (delta)
@@ -475,7 +475,10 @@ ARProgrezz.Viewer = function (settings) {
   // TODO Colocar lo de realidad aumentada donde corresponda
   // TODO Evento de ratón y toque en controls
   var ar_scene, ar_camera, ar_renderer, ar_player, ar_controls; // Escena de realidad aumentada
-  var objects = []; // Lista de objetos
+  var objects; // Lista de objetos
+  var targetVector; // Vector de pulsación en pantalla
+  var raycaster; // 'raycaster' para eventos de objetos
+  var selectedObject = null;
   
   /* Actualización de ajustes */
   function updateSettings(sets) {
@@ -531,8 +534,8 @@ ARProgrezz.Viewer = function (settings) {
   /* Actualización de los objetos */
   function updateObjects() {
     
-    for (o in objects)
-      objects[o].rotation.y += ROTATION * delta;
+    for (o in objects.children)
+      objects.children[o].ARObject.update(delta);
   }
   
   /* Iniciar actualización de la escena */
@@ -580,11 +583,75 @@ ARProgrezz.Viewer = function (settings) {
     }, ORIENTATION_DELAY);
   }
   
+  // TODO Plantearse poner esto en ARProgrezz.Object
+  /* Inicializar gestión y eventos de objetos */
+  function initObjects() {
+    
+    objects = new THREE.Object3D(); // Creando contenedor de objetos
+    
+    ar_scene.add(objects); // Añadiendo objetos a la escena
+    
+    targetVector = new THREE.Vector2(); // Creando vector para indicar pulsación en pantalla
+    
+    raycaster = new THREE.Raycaster(); // Creando 'raycaster' para eventos de ratón
+    
+    // Eventos de ratón
+    window.addEventListener('mousedown', onMouseDown, false);
+    window.addEventListener('mouseup', onTargetEnd, false);
+    
+    // Eventos de toque
+    window.addEventListener('touchstart', onTouchStart, false);
+    window.addEventListener('touchend', onTargetEnd, false);
+  }
+  
+  // TODO Referencia: http://soledadpenades.com/articles/three-js-tutorials/object-picking/
+  // TODO http://threejs.org/examples/#canvas_interactive_particles
+  
+  /* Pulsación del visor - MouseDown */
+  function onMouseDown(event) {
+    
+    detectIntersectedObjects(event.clientX, event.clientY);
+    if (selectedObject)
+      selectedObject.select();
+  }
+  
+  /* Pulsación del visor - TouchDown */
+  function onTouchStart(event) {
+    
+    detectIntersectedObjects(event.targetTouches[0].clientX, event.targetTouches[0].clientY);
+    if (selectedObject)
+      selectedObject.select();
+  }
+
+  /* Pulsación del visor - MouseUp/TouchEnd */
+  function onTargetEnd(event) {
+    
+    if (!selectedObject)
+      return;
+    
+    selectedObject.unselect();
+    selectedObject = null;
+  }
+  
+  /* Detección de objetos intersectados */
+  function detectIntersectedObjects(posX, posY) {
+    
+    targetVector.x = 2 * (posX / scope.viewerWidth) - 1;
+    targetVector.y = 1 - 2 * (posY / scope.viewerHeight);
+    
+    raycaster.setFromCamera( targetVector, ar_camera );
+    
+    var intersects = raycaster.intersectObjects( objects.children );
+    
+    if (intersects.length > 0)
+      selectedObject = intersects[0].object.ARObject;
+  }
+  
   /* Inicializar visor de realidad aumentada */
   this.initViewer = function(settings) {
     
     // Estableciendo pantalla completa
-    document.addEventListener("click", ARProgrezz.Utils.fullScreen, false);
+    document.addEventListener('click', ARProgrezz.Utils.fullScreen, false);
     
     // Bloqueando orientación apaisada
     ARProgrezz.Utils.lockOrientation();
@@ -624,6 +691,9 @@ ARProgrezz.Viewer = function (settings) {
           window.addEventListener( 'orientationchange', adjustViewer, false );
           window.addEventListener( 'resize', adjustViewer, false );
           
+          // Iniciando gestión de objetos
+          initObjects();
+          
           // Iniciar actualizado de la escena
           playAnimation();
           
@@ -645,25 +715,22 @@ ARProgrezz.Viewer = function (settings) {
   }
   
   /* Añadir objeto geolocalizado a la escena del visor */
-  this.addObject = function(latitude, longitude) {
+  this.addObject = function(options) {
+    
+    var object;
     
     // TODO Utilizar la latitud y la longitud para asignar la posición al objeto
-    // TODO Dibujar un objeto de verdad y reestructurar esto para que haga lo que debería hacer
+    switch(options.type) {
+      case 'basic':
+        object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect);
+      break;
+      default:
+        console.log("Error: Tipo de objeto '" + options.type + "' desconocido");
+        return;
+      break;
+    }
     
-    var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + '/img/textures/sold_to_spring.jpg' );
-		texture.anisotropy = ar_renderer.getMaxAnisotropy();
-
-		var material = new THREE.MeshBasicMaterial( { map: texture } );
-    var geometry = new THREE.OctahedronGeometry(OBJECT_RADIUS, 0);
-    
-    var object = new THREE.Mesh(geometry, material);
-    object.position.z = -5;
-    //object.position.x = ar_controls.getObjectX(latitude);
-    //object.position.z = ar_controls.getObjectX(longitude);
-    
-    objects.push(object);
-    
-    ar_scene.add(object);
+    objects.add(object.threeObject);
   }
   
 };
