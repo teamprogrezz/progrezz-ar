@@ -147,20 +147,80 @@ ARProgrezz.Support = {};
     catch ( e ) { return false; } 
   }
   
-  /* TODO Completar código de las señales, y permitir activar o desactivar
-  this.Signals = function() {
+  /* TODO Completar código de las señales, y permitir activar o desactivar */
+  
+  namespace.activateVideo = function() {
+    console.log("Pinguino");
+  }
+  
+  namespace.activateGeolocation = function() {
+    console.log("Pinguino");
+  }
+  
+  namespace.activateGyroscope = function() {
+    console.log("Pinguino");
+  }
+  
+  namespace.Signals = function() {
     
-    var video_button;
+    var scope = this;
     
     this.init = function() {
       
+      var signals = document.createElement("div");
+      signals.setAttribute("style",
+                           "position: absolute;" +
+                           "z-index: 1;" +
+                           "bottom: 10px;" +
+                           "left: 10px;");
       
+      for(var i = 0; i < 3; i++) {
+        
+        var signal = document.createElement("img");
+        var signal_button = document.createElement("a");
+        
+        signals.appendChild(document.createElement("br"));
+        
+        signal.setAttribute("style",
+                            "border: outset 1px;" +
+                            "margin: 2.5px;");
+        
+        var signal_type, signal_img;
+        switch(i) {
+          case 0: // Geolocalización
+            signal_type = ARProgrezz.Support.geolocation;
+            signal.src = "img/icons/geolocation.png";
+            signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateGeolocation();');
+          break;
+          case 1: // Giroscopio
+            signal_type = ARProgrezz.Support.gyroscope;
+            signal.src = "img/icons/gyroscope.png";
+            signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateGyroscope();');
+          break;
+          case 2: // Vídeo
+            signal_type = ARProgrezz.Support.video;
+            signal.src = "img/icons/videocamera.png";
+            signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateVideo();');
+          break;
+        }
+        
+        if (signal_type)
+          signal.style.backgroundColor = "#55FC18";
+        else
+          signal.style.backgroundColor = "#C4C4C4"; 
+        
+        signal_button.appendChild(signal);
+        signals.appendChild(signal_button);
+      }
+        
+      document.body.appendChild(signals);
     }
     
-  }*/
-
+    scope.init();
+  };
+  
 })(ARProgrezz.Support);
-
+  
 /* Vídeo del visor de realidad aumentada */
 ARProgrezz.Video = function () {
   
@@ -491,9 +551,10 @@ ARProgrezz.Viewer = function (settings) {
     
     // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
     ARProgrezz.Utils.waitCallback(checked, function () {
-      
+      //console.log(ARProgrezz.Support);
+      var signals = new ARProgrezz.Support.Signals(); // TODO Avisos
       // TODO Quitar chivatos
-      alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
+      //alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
       //ARProgrezz.Support.gyroscope = false;
       // Inicializar realidad aumentada
       initAR( function () {
