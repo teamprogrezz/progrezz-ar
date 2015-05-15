@@ -1,4 +1,3 @@
-ARProgrezz = {}; // Módulo de realidad aumentada
 
 /* Utilidades */
 ARProgrezz.Utils = {};
