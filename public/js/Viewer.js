@@ -183,7 +183,7 @@ ARProgrezz.Support = {};
         var signal_button = document.createElement("a");
         
         signals.appendChild(document.createElement("br"));
-        console.log(signal_button);
+        
         signal.setAttribute("style",
                             "border: outset 1px;" +
                             "margin: 2.5px;");
@@ -487,7 +487,7 @@ ARProgrezz.Viewer = function (settings) {
   }
   
   /* Inicialización del jugador en la escena de realidad aumentada */
-  function initPlayer() {
+  function initPlayer(onPlayerInit) {
 
     if (scope.settings.mode === 'normal') {
       
@@ -496,6 +496,8 @@ ARProgrezz.Viewer = function (settings) {
       
       // Creación del controlador de posición y orientación del jugador
       ar_controls = new ARProgrezz.PositionControls(ar_camera);
+      ar_controls.onInit = onPlayerInit;
+      ar_controls.activate();
       
       return {vision: ar_camera, controls: ar_controls};
     }
@@ -511,11 +513,16 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicialización de la escena de realidad aumentada */
   function initAR(onSuccess) {
     
+    // TODO Comentar debidamente, y al final de la función, y lo de iniciar al jugador
+    var ar_inited = { flag: ARProgrezz.Flags.WAIT };
+    
     // Creación de la escena
     ar_scene = new THREE.Scene();
     
     // Inicializando al jugador
-    ar_player = initPlayer();
+    ar_player = initPlayer(function() { // TODO Evitar pedir la geolocalización dos veces
+      ar_inited.flag = ARProgrezz.Flags.SUCCESS;
+    });
     
     // Creación del renderizador
     var options = { alpha: true };
@@ -527,8 +534,11 @@ ARProgrezz.Viewer = function (settings) {
     ar_renderer.setPixelRatio( window.devicePixelRatio );
     document.body.appendChild(ar_renderer.domElement);
     
-    // Continuando con la inicialización
-    onSuccess();
+    ARProgrezz.Utils.waitCallback(ar_inited, function () {
+      // Continuando con la inicialización
+      onSuccess();
+    });
+
   }
   
   /* Actualización de los objetos */
@@ -672,11 +682,9 @@ ARProgrezz.Viewer = function (settings) {
     
     // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
     ARProgrezz.Utils.waitCallback(checked, function () {
-      //console.log(ARProgrezz.Support);
+      
       var signals = new ARProgrezz.Support.Signals(); // TODO Avisos
-      // TODO Quitar chivatos
-      //alert("Vídeo: " + ARProgrezz.Support.video + " | Geo: " + ARProgrezz.Support.geolocation + " | Gyro: " + ARProgrezz.Support.gyroscope);
-      //ARProgrezz.Support.gyroscope = false;
+      
       // Inicializar realidad aumentada
       initAR( function () {
         
@@ -722,7 +730,7 @@ ARProgrezz.Viewer = function (settings) {
     // TODO Utilizar la latitud y la longitud para asignar la posición al objeto
     switch(options.type) {
       case 'basic':
-        object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect);
+        object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect, ar_controls);
       break;
       default:
         console.log("Error: Tipo de objeto '" + options.type + "' desconocido");
