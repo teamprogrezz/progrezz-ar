@@ -29,14 +29,22 @@
     
     ARViewer.onInit = function() {
       
-      var options = {
+      var options1 = {
         coords: { latitude: 28.481745, longitude: -16.325330 },
         type: 'basic',
         /*onSelect: function() { window.location.assign("http://www.w3schools.com") },*/
         collectable: true
       }
+      ARViewer.addObject(options1);
       
-      ARViewer.addObject(options);
+      var options2 = {
+        coords: { latitude: 28.482124, longitude: -16.325994 },
+        type: 'basic',
+        /*onSelect: function() { window.location.assign("http://www.w3schools.com") },*/
+        collectable: true
+      }
+      ARViewer.addObject(options2);
+      
     };
     
     ARViewer.initViewer();

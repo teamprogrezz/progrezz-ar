@@ -3,12 +3,12 @@
 ARProgrezz.Object = {};
 
 /* Objecto básico - Tetraedro */
-ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
+ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControls) {
   
-  var scope = this;
+  var scope = this; // Ámbito
   
   /* Constantes */
-  var OBJECT_RADIUS = 1; // Radio del objeto
+  var OBJECT_RADIUS = 3; // Radio del objeto
   var ROTATION = 0.4; // Velocidad de rotación del objeto
   var REDUCTION_BASE = 0.15; // Constante que indica la reducción de escalan del objeto
   var REDUCTION_ACCELERATION = 3; // Determina el aumento de velocidad en la reducción de escala del objeto
@@ -22,12 +22,15 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
   this.longitude = 0; // Longitud real del objeto
   this.collectable = true; // Indica si el objeto se puede seleccionar sólo una vez
   this.onSelect = defaultSelect; // Función ejecutada en evento
-  this.selected = false; // Indica si ha sido seleccionado
+  
+  /* Variables */
+  var selected = false; // Indica si ha sido seleccionado
+  var positionControls; // Objeto de ARProgrezz.PositionControls que calculará la posición de los objetos
   
   /* Seleccionar el objeto */
   this.select = function() {
     
-    if (scope.selected && scope.collectable)
+    if (selected && scope.collectable)
       return;
     
     scope.threeObject.material.color.setHex(COLOR_SELECT);
@@ -36,7 +39,7 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
   /* Deseleccionar el objeto */
   this.unselect = function() {
     
-    scope.selected = true;
+    selected = true;
     setTimeout(function() {
       scope.threeObject.material.color.setHex(COLOR_DEFAULT);
     }, COLOR_DELAY);
@@ -46,7 +49,7 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
   /* Actualizar frame del objeto */
   this.update = function(delta) {
     
-    if (scope.collectable && scope.selected) {
+    if (scope.collectable && selected) {
       
       // Comprobación de si se ha llegado o no al tamaño mínimo
       if (scope.threeObject.scale.x > 0)
@@ -66,6 +69,8 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
   
   /* Actualizar las características del objeto */
   function setOptions() {
+    
+    positionControls = arControls;
     
     if (coords) {
       scope.latitude = coords.latitude; // Latitud
@@ -100,10 +105,11 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent) {
     
     // Ajustando posición
     // TODO Cambiar para que se ajuste a la latitud y la longitud
-    scope.threeObject.position.z = -5;
+    //scope.threeObject.position.z = -5;
     
-    //object.position.x = ar_controls.getObjectX(latitude);
-    //object.position.z = ar_controls.getObjectX(longitude);
+    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude);
+    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude);
+    console.log(scope.threeObject.position.x, scope.threeObject.position.z);
   }
   
   init();

@@ -1,15 +1,15 @@
 ARProgrezz = {}; // Módulo de realidad aumentada
 
-/* Indicadores de estado */
-ARProgrezz.Flags = {
-  SUCCESS: 1,
-  ERROR: -1,
-  WAIT: 0
-};
-
 /* Utilidades */
 ARProgrezz.Utils = {};
 (function(namespace){
+  
+  /* Indicadores de estado */
+  namespace.Flags = {
+    SUCCESS: 1,
+    ERROR: -1,
+    WAIT: 0
+  };
   
   var WAIT_DELAY = 200; // (ms) Retardo de espera a Callbacks
 
@@ -19,9 +19,9 @@ ARProgrezz.Utils = {};
     if (!end_function)
       return;
     
-    if (obj.flag == ARProgrezz.Flags.WAIT)
+    if (obj.flag == ARProgrezz.Utils.Flags.WAIT)
       setTimeout(namespace.waitCallback, WAIT_DELAY, obj, end_function)
-    else if (obj.flag == ARProgrezz.Flags.SUCCESS)
+    else if (obj.flag == ARProgrezz.Utils.Flags.SUCCESS)
       end_function();
   }
   

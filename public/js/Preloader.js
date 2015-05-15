@@ -2,7 +2,7 @@
 /* Preloader del visor */
 ARProgrezz.Preloader = function() {
   
-  var scope = this;
+  var scope = this; // TODO Comentar
   
   var inited = false;
   var load_screen = null;
