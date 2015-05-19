@@ -10,9 +10,6 @@ ARProgrezz.Support = {};
   namespace.gyroscope = null;
   namespace.geolocation = null;
   
-  // Función de acceso a vídeo
-  namespace.accessVideo = null;
-  
   // Vídeo stream
   namespace.videoStream = null;
   
@@ -25,9 +22,9 @@ ARProgrezz.Support = {};
   
   /* Comprobación de acceso a vídeo, giroscopio, y geolocalización */
   namespace.check = function(end_function) {
-    checkVideoCamera(function() {
+    checkGeolocation(function() {
       checkGyroscope(function() {
-        checkGeolocation(function() {
+        checkVideoCamera(function() {
           if (end_function)
             end_function();
         });
@@ -35,25 +32,23 @@ ARProgrezz.Support = {};
     });
   }
   
-  /* Acceso a la cámara de vídeo (getUserMedia) */
-  function checkVideoCamera(end_function) {
+  /* Acceso al vídeo */
+  function accessVideo(constraints, end_function) {
     
-    namespace.accessVideo = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
     
-    if (namespace.accessVideo) {
+    if (navigator.getUserMedia) {
       
       var signal = { flag: ARProgrezz.Utils.Flags.WAIT };
-      
-      navigator.getUserMedia = namespace.accessVideo;
-      
+    
       navigator.getUserMedia (
-        {video: true, audio: false},
-        function(localMediaStream) {
+        constraints, // Reestricciones de acceso a la cámara trasera
+        function(localMediaStream) { // Obteniendo datos de vídeo
           namespace.video = available.video = true;
           namespace.videoStream = localMediaStream;
           signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
         },
-        function(error) {
+        function(error) { // Vídeo no accesible
           available.video = namespace.video = false;
           signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
         }
@@ -64,6 +59,35 @@ ARProgrezz.Support = {};
       
       available.video = namespace.video = false;
       end_function();
+    }
+  }
+  
+  /* Acceso a la cámara de vídeo (getUserMedia) */
+  function checkVideoCamera(end_function) {
+    
+    // Accediendo a la cámara trasera dependiendo del navegador
+    var nav = navigator.userAgent.toLowerCase();
+    
+    if (nav.indexOf("chrome") != -1) { // En Chrome se utiliza por defecto la cámara frontal, por lo que se selecciona la trasera de forma manual
+      
+      MediaStreamTrack.getSources(function(sourceInfos) {
+        
+        // Seleccionando la cámara trasera del dispositivo
+        var videoSource = null;
+        for (s in sourceInfos)
+          if (sourceInfos[s].kind === 'video' && sourceInfos[s].facing != 'user') {
+            alert(JSON.stringify(sourceInfos[s]));
+            videoSource = sourceInfos[s].id;
+          }
+        
+        accessVideo({video: {optional: [{sourceId: videoSource}]}, audio: false}, end_function);
+      });
+    }
+    else if (nav.indexOf("firefox") != -1) { // En Firefox el usuario decide que cámara compartir
+      accessVideo({video: true, audio: false}, end_function);
+    }
+    else { // Otros navegadores - Acceso estándar
+      accessVideo({video: true, audio: false}, end_function);
     }
   }
   
