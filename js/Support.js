@@ -106,7 +106,7 @@ ARProgrezz.Support = {};
   
   /* Acceso a la geolocalización */
   function checkGeolocation(end_function) {
-    // TODO Si no encuentra la geolocalización puede quedarse años, ponerle un límite de espera
+    
     if (navigator.geolocation) {
       
       var signal = { flag: ARProgrezz.Utils.Flags.WAIT };

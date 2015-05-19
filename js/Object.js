@@ -103,13 +103,9 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
     scope.threeObject = new THREE.Mesh(geometry, material);
     scope.threeObject.ARObject = scope; // Referencia al contenedor del objeto
     
-    // Ajustando posición
-    // TODO Cambiar para que se ajuste a la latitud y la longitud
-    //scope.threeObject.position.z = -5;
-    
-    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude);
-    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude);
-    console.log(scope.threeObject.position.x, scope.threeObject.position.z);
+    // Ajustando posición de acuerdo a la latitud y longitud
+    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude); // Latitud -> Eje Z
+    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude); // Longitud 
   }
   
   init();

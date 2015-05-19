@@ -2,10 +2,10 @@
 /* Preloader del visor */
 ARProgrezz.Preloader = function() {
   
-  var scope = this; // TODO Comentar
+  var scope = this; // Ámbito
   
-  var inited = false;
-  var load_screen = null;
+  var inited = false; // Indica si se ha iniciado
+  var load_screen = null; // Pantalla de carga
   
   /* Inicialización del preloader */
   this.initLoad = function() {
@@ -15,6 +15,7 @@ ARProgrezz.Preloader = function() {
     
     inited = true;
     
+    // Creación de la pantalla de carga
     load_screen = document.createElement('div');
     load_screen.setAttribute("style",
                               "background: #FFF url('" + ARProgrezz.Utils.rootDirectory() + "/img/preloader.gif') no-repeat center center; " +

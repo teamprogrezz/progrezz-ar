@@ -90,8 +90,7 @@ ARProgrezz.Video = function () {
     else if (nav.indexOf("firefox") != -1) { // En Firefox el usuario decide que cámara compartir
       accessVideo({video: true, audio: false});
     }
-    else { // TODO Contemplar el caso de otros navegadores
-      alert (nav); // TODO Quitar alerta
+    else { // Otros navegadores - Acceso estándar
       accessVideo({video: true, audio: false});
     }
     
