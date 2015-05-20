@@ -13,6 +13,9 @@ ARProgrezz.Support = {};
   // Vídeo stream
   namespace.videoStream = null;
   
+  // Callback de obtención de coordenadas
+  namespace.geoCallback = null;
+  
   // Tecnologías soportadas
   var available = {
     video: false,
@@ -23,7 +26,21 @@ ARProgrezz.Support = {};
   /* Comprobación de acceso a vídeo, giroscopio, y geolocalización */
   namespace.check = function(end_function) {
     checkGeolocation(function() {
+      
+      if (!available.geolocation) { // Si no hay acceso a la geolocalización, se detiene la carga
+        alert(">> El visor no ha podido iniciarse por no ser capaz de acceder a la geolocalización <<");
+        return;
+      }
+      
       checkGyroscope(function() {
+        
+        if (!available.gyroscope) { // Sin giroscopio, no es necesario comprobar la carga del vídeo
+          available.video = namespace.video = false;
+          if (end_function)
+            end_function();
+          return;
+        }
+        
         checkVideoCamera(function() {
           if (end_function)
             end_function();
@@ -135,16 +152,16 @@ ARProgrezz.Support = {};
       
       var signal = { flag: ARProgrezz.Utils.Flags.WAIT };
       
-      navigator.geolocation.getCurrentPosition(
-        function(position) {
-          namespace.geolocation = available.geolocation = true;
-          signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
-        },
-        function(error) {
-          available.geolocation = namespace.geolocation = false;
-          signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
-        }
-      );
+      // Callback de acceso a la geolocalización
+      namespace.geoCallback = function(position) {
+        
+        if (namespace.geolocation != null)
+          return;
+        
+        namespace.geolocation = available.geolocation = true;
+        signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
+      }
+      navigator.geolocation.watchPosition(function(data) { namespace.geoCallback(data); });
       
       setTimeout(function() {
         if (signal.flag == ARProgrezz.Utils.Flags.WAIT) {
@@ -186,7 +203,7 @@ ARProgrezz.Support = {};
   }
   
   namespace.Signals = function() {
-  // TODO Comprobar en orden: Geolocalización, giroscopio y vídeo, si no hay geolocalización: se acabó, y si no hay giroscopio, no comprobar vídeo
+  // TODO  si no hay geolocalización: se acabó, y si no hay giroscopio, no comprobar vídeo
   
   /* TODO Completar código de las señales, y permitir activar o desactivar */
     

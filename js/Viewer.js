@@ -237,7 +237,7 @@ ARProgrezz.Viewer = function (settings) {
     // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
     ARProgrezz.Utils.waitCallback(checked, function () {
       
-      var signals = new ARProgrezz.Support.Signals(); // TODO Avisos
+      var signals = new ARProgrezz.Support.Signals(); // Avisos
       
       // Inicializar realidad aumentada
       initAR( function () {
@@ -281,7 +281,7 @@ ARProgrezz.Viewer = function (settings) {
     
     var object;
     
-    // TODO Utilizar la latitud y la longitud para asignar la posición al objeto
+    // Creación del objeto dependiendo del tipo
     switch(options.type) {
       case 'basic':
         object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect, ar_controls);

@@ -104,8 +104,8 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
     scope.threeObject.ARObject = scope; // Referencia al contenedor del objeto
     
     // Ajustando posición de acuerdo a la latitud y longitud
-    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude); // Latitud -> Eje Z
-    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude); // Longitud 
+    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude); // Latitud -> Eje Z (invertido)
+    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude); // Longitud -> Eje X
   }
   
   init();
