@@ -18,6 +18,7 @@ ARProgrezz.Viewer = function (settings) {
   /* Constantes globales */
   var ORIENTATION_DELAY = 300 // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
   var GAME_FOV = 60; // (º) Campo de visión
+  var STEREO_EYE_SEPARATION = 5; // Separación entre los ojos para visión estereoscópica
   // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
   var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
   
@@ -26,13 +27,12 @@ ARProgrezz.Viewer = function (settings) {
   var delta; // Tiempo entre frames (ms)
   var real_height = 0; // Alto real del visor (incluyendo espacio no utilizado por el vídeo)
   var ar_video; // Vídeo del visor - ARProgrezz.Video
-  // TODO Colocar lo de realidad aumentada donde corresponda
-  // TODO Evento de ratón y toque en controls
-  var ar_scene, ar_camera, ar_renderer, ar_player, ar_controls; // Escena de realidad aumentada
+  var ar_scene, ar_camera, ar_renderer, ar_player, ar_controls, ar_stereo; // Escena de realidad aumentada
+  var real_renderer; // Renderizador que se encarga del dibujado de la escena
   var objects; // Lista de objetos
   var targetVector; // Vector de pulsación en pantalla
   var raycaster; // 'raycaster' para eventos de objetos
-  var selectedObject = null;
+  var selectedObject = null; // Objeto seleccionado
   
   /* Actualización de ajustes */
   function updateSettings(sets) {
@@ -40,27 +40,116 @@ ARProgrezz.Viewer = function (settings) {
       this.settings[s] = sets[s];
   }
   
+  // TODO Poner bien lo del botón y lo de z-index de todos y lo de los colores, y ponerlo en Support
+  var signal;
+  function activateStereoscopy() {
+    
+    if (scope.settings.mode === 'normal') {
+      scope.settings.mode = 'stereoscopic';
+      real_renderer = ar_stereo;
+      signal.style.backgroundColor = "#55FC18";
+    }
+    else if (scope.settings.mode === 'stereoscopic') {
+      scope.settings.mode = 'normal';
+      real_renderer = ar_renderer;
+      signal.style.backgroundColor = "#666666";
+    }
+    adjustViewer();
+  }
+  
+  /* Inicialización del botón de visión estereoscópica */
+  function initStereoButton() {
+    
+    var signals = document.createElement("div");
+    signals.setAttribute("style",
+                         "position: absolute;" +
+                         "z-index: 1;" +
+                         "bottom: 10px;" +
+                         "right: 10px;");
+    
+    signal = document.createElement("img");
+    var signal_button = document.createElement("a");
+    
+    signals.appendChild(document.createElement("br"));
+    
+    signal.setAttribute("style",
+                        "border: outset 1px;" +
+                        "margin: 2.5px;");
+    
+    var signal_type, signal_img;
+
+    signal_type = ARProgrezz.Support.video;
+    signal.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
+    signal.onmousedown = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo-white.png";
+    };
+    signal.onmouseup = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
+    };
+    signal.onmouseleave = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
+    };
+    signal.ontouchstart = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo-white.png";
+    };
+    signal.ontouchend = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
+    };
+    signal.ontouchcancel = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
+    };
+    signal_button.addEventListener("click", activateStereoscopy);
+    
+    signal_button.appendChild(signal);
+    signals.appendChild(signal_button);
+    document.body.appendChild(signals);
+    
+    if (scope.settings.mode === 'normal')
+      signal.style.backgroundColor = "#666666";
+    else if (scope.settings.mode === 'stereoscopic')
+      signal.style.backgroundColor = "#55FC18"; 
+  }
+  
   /* Inicialización del jugador en la escena de realidad aumentada */
   function initPlayer(onPlayerInit) {
 
-    if (scope.settings.mode === 'normal') {
+    // Creación de la cámara que representa la visión del jugador
+    ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
+    
+    // Creación del controlador de posición y orientación del jugador
+    ar_controls = new ARProgrezz.PositionControls(ar_camera);
+    ar_controls.onInit = onPlayerInit;
+    ar_controls.activate();
+    
+    return {vision: ar_camera, controls: ar_controls};
+  }
+  
+  /* Incialización y creación del renderizador en función del modo */
+  function initRenderer() {
+    
+    var options = { alpha: true };
+    
+    if (ARProgrezz.Support.webglAvailable()) // WebGL soportado -> Renderizador WebGL
+      ar_renderer = new THREE.WebGLRenderer(options); 
+    else // WebGL no soportado -> Renderizador Canvas
+      ar_renderer = new THREE.CanvasRenderer(options);
       
-      // Creación de la cámara que representa la visión del jugador
-      ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
-      
-      // Creación del controlador de posición y orientación del jugador
-      ar_controls = new ARProgrezz.PositionControls(ar_camera);
-      ar_controls.onInit = onPlayerInit;
-      ar_controls.activate();
-      
-      return {vision: ar_camera, controls: ar_controls};
-    }
-    else if (settings.mode === 'stereoscopic') {
-      
-      // TODO Cambiar en el futuro, para la visión estereoscópica
-    }
+    ar_renderer.setClearColor( 0x000000, 0 );
+    ar_renderer.setPixelRatio( window.devicePixelRatio );
+    document.body.appendChild(ar_renderer.domElement);
+    
+    ar_stereo = new THREE.StereoEffect(ar_renderer);
+    ar_stereo.eyeSeparation = STEREO_EYE_SEPARATION;
+    
+    // Selección del modo
+    if (scope.settings.mode === 'normal') // Modo normal
+      return ar_renderer;
+    else if (scope.settings.mode === 'stereoscopic')// Modo estereoscópico
+      return ar_stereo;
     else {
-      alert("Error: No se reconoce el modo seleccionado (" + ar.settings.mode + ")");
+      alert("Error: No se reconoce el modo seleccionado (" + scope.settings.mode + ")");
+      scope.settings.mode = 'normal';
+      return ar_renderer;
     }
   }
   
@@ -73,20 +162,13 @@ ARProgrezz.Viewer = function (settings) {
     // Creación de la escena
     ar_scene = new THREE.Scene();
     
+    // Creación del renderizador
+    real_renderer = initRenderer();
+    
     // Inicializando al jugador
     ar_player = initPlayer(function() { // TODO Evitar pedir la geolocalización dos veces
       ar_inited.flag = ARProgrezz.Utils.Flags.SUCCESS;
     });
-    
-    // Creación del renderizador
-    var options = { alpha: true };
-    if (ARProgrezz.Support.webglAvailable()) // WebGL soportado -> Renderizador WebGL
-      ar_renderer = new THREE.WebGLRenderer(options); 
-    else // WebGL no soportado -> Renderizador Canvas
-      ar_renderer = new THREE.CanvasRenderer(options);
-    ar_renderer.setClearColor( 0x000000, 0 );
-    ar_renderer.setPixelRatio( window.devicePixelRatio );
-    document.body.appendChild(ar_renderer.domElement);
     
     ARProgrezz.Utils.waitCallback(ar_inited, function () {
       // Continuando con la inicialización
@@ -115,7 +197,7 @@ ARProgrezz.Viewer = function (settings) {
       
       ar_controls.update(); // Actualizando cámara
       
-      ar_renderer.render(ar_scene, ar_camera); // Renderizado
+      real_renderer.render(ar_scene, ar_camera); // Renderizado
     }
     
     render();
@@ -141,13 +223,12 @@ ARProgrezz.Viewer = function (settings) {
       
       // Tamaño y posición de la escena
       ar_renderer.domElement.setAttribute("style", "display: block; margin: auto; padding-top: " + Math.trunc((real_height - scope.viewerHeight) / 2.0) + "px;");
-      ar_renderer.setSize(scope.viewerWidth, scope.viewerHeight);
       ar_renderer.setPixelRatio( window.devicePixelRatio );
+      real_renderer.setSize(scope.viewerWidth, scope.viewerHeight); 
       
     }, ORIENTATION_DELAY);
   }
   
-  // TODO Plantearse poner esto en ARProgrezz.Object
   /* Inicializar gestión y eventos de objetos */
   function initObjects() {
     
@@ -167,9 +248,6 @@ ARProgrezz.Viewer = function (settings) {
     window.addEventListener('touchstart', onTouchStart, false);
     window.addEventListener('touchend', onTargetEnd, false);
   }
-  
-  // TODO Referencia: http://soledadpenades.com/articles/three-js-tutorials/object-picking/
-  // TODO http://threejs.org/examples/#canvas_interactive_particles
   
   /* Pulsación del visor - MouseDown */
   function onMouseDown(event) {
@@ -197,14 +275,23 @@ ARProgrezz.Viewer = function (settings) {
     selectedObject = null;
   }
   
-  /* Detección de objetos intersectados */
+  /* Detección de objetos interceptados */
   function detectIntersectedObjects(posX, posY) {
     
-    targetVector.x = 2 * (posX / scope.viewerWidth) - 1;
-    targetVector.y = 1 - 2 * (posY / scope.viewerHeight);
+    // Coordenadas en pantalla
+    if (scope.settings.mode === 'normal') { // Posición convertida en intervalo [-1, 1]
+      targetVector.x = 2 * (posX / scope.viewerWidth) - 1;
+      targetVector.y = 1 - 2 * (posY / scope.viewerHeight);
+    }
+    else if (scope.settings.mode === 'stereoscopic') { // En modo estereoscópico se lanza hacia el centro
+      targetVector.x = 0;
+      targetVector.y = 0;
+    }
     
+    // Establecimiento de la cámara y el vector de lanzamiento
     raycaster.setFromCamera( targetVector, ar_camera );
     
+    // Interceptar objetos
     var intersects = raycaster.intersectObjects( objects.children );
     
     if (intersects.length > 0)
@@ -247,6 +334,9 @@ ARProgrezz.Viewer = function (settings) {
         
         // Ejecución tras inicializar vídeo
         ar_video.onSuccess = function() {
+          
+          // Creación del botón indicador de visión estereoscópica
+          initStereoButton(); // TODO Esto no debería ir aquí
           
           // Evento de ajuste de dimensiones y posición del visor
           adjustViewer();
