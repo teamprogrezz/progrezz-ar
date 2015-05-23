@@ -15,6 +15,7 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
   var COLOR_DELAY = 250; // Tiempo (ms) que permanece el objeto con el color que indica selección
   var COLOR_DEFAULT = 0xffffff; // Color por defecto del objeto
   var COLOR_SELECT = 0xff0000; // Color de selección del objeto
+  var IMAGE_PATH = '/img/textures/sold_to_spring.jpg'; // Ruta de la textura del objeto
   
   /* Atributos */
   this.threeObject; // Objeto de Three.js
@@ -30,19 +31,21 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
   /* Seleccionar el objeto */
   this.select = function() {
     
-    if (selected && scope.collectable)
-      return;
-    
     scope.threeObject.material.color.setHex(COLOR_SELECT);
   };
   
   /* Deseleccionar el objeto */
   this.unselect = function() {
     
+    if (selected && scope.collectable)
+      return;
+    
     selected = true;
+    
     setTimeout(function() {
       scope.threeObject.material.color.setHex(COLOR_DEFAULT);
     }, COLOR_DELAY);
+    
     scope.onSelect();
   };
   
@@ -63,8 +66,8 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
   
   /* Función por defecto de respuesta a evento */
   function defaultSelect() {
-    // TODO Rellenar función por defecto de respuesta a evento.
-    console.log("Objeto capturado :D");
+    
+    alert(" > Objeto obtenido <\n > Coordenadas:\n   - Latitud: " + scope.latitude + "\n   - Longitud: " + scope.longitude);
   }
   
   /* Actualizar las características del objeto */
@@ -93,7 +96,7 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
     setOptions();
     
     // Creando textura
-    var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + '/img/textures/sold_to_spring.jpg' );
+    var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + IMAGE_PATH);
 		//texture.anisotropy = ar_renderer.getMaxAnisotropy();
 
     // Creando objeto de Three.js

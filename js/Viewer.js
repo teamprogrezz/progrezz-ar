@@ -21,6 +21,8 @@ ARProgrezz.Viewer = function (settings) {
   var STEREO_EYE_SEPARATION = 5; // Separación entre los ojos para visión estereoscópica
   // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
   var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
+  var STEREO_ICON_PATH = "/img/icons/stereo.png";
+  var STEREO_WHITE_ICON_PATH = "/img/icons/stereo-white.png";
   
   /* Variables globales */
   var clock = new THREE.Clock(); // Reloj para la obtención de tiempo entre frames (delta)
@@ -29,6 +31,8 @@ ARProgrezz.Viewer = function (settings) {
   var ar_video; // Vídeo del visor - ARProgrezz.Video
   var ar_scene, ar_camera, ar_renderer, ar_player, ar_controls, ar_stereo; // Escena de realidad aumentada
   var real_renderer; // Renderizador que se encarga del dibujado de la escena
+  var signals; // Señales que indican estado de activación de tecnologías - ARProgrezz.Support.Signals
+  var stereo_signal; // Señal que indica el estado de activación del modo estereoscópico
   var objects; // Lista de objetos
   var targetVector; // Vector de pulsación en pantalla
   var raycaster; // 'raycaster' para eventos de objetos
@@ -40,19 +44,20 @@ ARProgrezz.Viewer = function (settings) {
       this.settings[s] = sets[s];
   }
   
-  // TODO Poner bien lo del botón y lo de z-index de todos y lo de los colores, y ponerlo en Support
-  var signal;
+  /* Activación/desactivación de la visión estereoscópica */
   function activateStereoscopy() {
     
-    if (scope.settings.mode === 'normal') {
+    if (scope.settings.mode === 'normal') { // Activación del modo estereoscópico
       scope.settings.mode = 'stereoscopic';
       real_renderer = ar_stereo;
-      signal.style.backgroundColor = "#55FC18";
+      stereo_signal.style.backgroundColor = "#55FC18";
+      ar_video.activateStereoscopicVideo();
     }
-    else if (scope.settings.mode === 'stereoscopic') {
+    else if (scope.settings.mode === 'stereoscopic') { // Desactivación del modo estereoscópico
       scope.settings.mode = 'normal';
       real_renderer = ar_renderer;
-      signal.style.backgroundColor = "#666666";
+      stereo_signal.style.backgroundColor = "#666666";
+      ar_video.disarmStereoscopicVideo();
     }
     adjustViewer();
   }
@@ -60,54 +65,44 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicialización del botón de visión estereoscópica */
   function initStereoButton() {
     
-    var signals = document.createElement("div");
-    signals.setAttribute("style",
-                         "position: absolute;" +
-                         "z-index: 1;" +
-                         "bottom: 10px;" +
-                         "right: 10px;");
+    var container = document.createElement("div");
+    container.setAttribute("style",
+                           "position: absolute;" +
+                           "z-index: 1;" +
+                           "bottom: 10px;" +
+                           "right: 10px;");
     
-    signal = document.createElement("img");
-    var signal_button = document.createElement("a");
-    
-    signals.appendChild(document.createElement("br"));
-    
-    signal.setAttribute("style",
+    stereo_signal = document.createElement("img");
+    stereo_signal.setAttribute("style",
                         "border: outset 1px;" +
                         "margin: 2.5px;");
     
-    var signal_type, signal_img;
-
-    signal_type = ARProgrezz.Support.video;
-    signal.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
-    signal.onmousedown = function() {
-      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo-white.png";
+    var setImage = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + STEREO_ICON_PATH;
     };
-    signal.onmouseup = function() {
-      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
-    };
-    signal.onmouseleave = function() {
-      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
-    };
-    signal.ontouchstart = function() {
-      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo-white.png";
-    };
-    signal.ontouchend = function() {
-      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
-    };
-    signal.ontouchcancel = function() {
-      this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/stereo.png";
-    };
-    signal_button.addEventListener("click", activateStereoscopy);
     
-    signal_button.appendChild(signal);
-    signals.appendChild(signal_button);
-    document.body.appendChild(signals);
+    var setWhiteImage = function() {
+      this.src = ARProgrezz.Utils.rootDirectory() + STEREO_WHITE_ICON_PATH;
+    };
+    
+    stereo_signal.src = ARProgrezz.Utils.rootDirectory() + STEREO_ICON_PATH;
+        
+    stereo_signal.addEventListener("mousedown", setWhiteImage);
+    stereo_signal.addEventListener("mouseup", setImage);
+    stereo_signal.addEventListener("mouseleave", setImage);
+    stereo_signal.addEventListener("touchstart", setWhiteImage);
+    stereo_signal.addEventListener("touchend", setImage);
+    stereo_signal.addEventListener("touchcancel", setImage);
+    
+    stereo_signal.addEventListener("click", activateStereoscopy);
+    
+    container.appendChild(stereo_signal);
+    document.body.appendChild(container);
     
     if (scope.settings.mode === 'normal')
-      signal.style.backgroundColor = "#666666";
+      stereo_signal.style.backgroundColor = "#666666";
     else if (scope.settings.mode === 'stereoscopic')
-      signal.style.backgroundColor = "#55FC18"; 
+      stereo_signal.style.backgroundColor = "#55FC18"; 
   }
   
   /* Inicialización del jugador en la escena de realidad aumentada */
@@ -156,7 +151,6 @@ ARProgrezz.Viewer = function (settings) {
   /* Inicialización de la escena de realidad aumentada */
   function initAR(onSuccess) {
     
-    // TODO Comentar debidamente, y al final de la función, y lo de iniciar al jugador
     var ar_inited = { flag: ARProgrezz.Utils.Flags.WAIT };
     
     // Creación de la escena
@@ -166,13 +160,12 @@ ARProgrezz.Viewer = function (settings) {
     real_renderer = initRenderer();
     
     // Inicializando al jugador
-    ar_player = initPlayer(function() { // TODO Evitar pedir la geolocalización dos veces
+    ar_player = initPlayer(function() {
       ar_inited.flag = ARProgrezz.Utils.Flags.SUCCESS;
     });
     
     ARProgrezz.Utils.waitCallback(ar_inited, function () {
-      // Continuando con la inicialización
-      onSuccess();
+      onSuccess(); // Continuando con la inicialización
     });
 
   }
@@ -214,7 +207,7 @@ ARProgrezz.Viewer = function (settings) {
       
       // Calculando tamaño real del visor de acuerdo al vídeo
       var viewer_ratio = Math.min(ar_video.arVideo.width / ar_video.arVideo.videoWidth, ar_video.arVideo.height / ar_video.arVideo.videoHeight);
-      scope.viewerWidth = viewer_ratio * ar_video.arVideo.videoWidth;
+      scope.viewerWidth = viewer_ratio * ar_video.arVideo.videoWidth * ((scope.settings.mode === 'normal' || !ARProgrezz.Support.video)? 1.0 : 2.0);
       scope.viewerHeight = viewer_ratio * ar_video.arVideo.videoHeight;
       
       // Calculando relación de aspecto
@@ -298,6 +291,33 @@ ARProgrezz.Viewer = function (settings) {
       selectedObject = intersects[0].object.ARObject;
   }
   
+  /* Activación/desactivación del vídeo */
+  function changeVideo() {
+    
+    ar_video.removeVideo(); // Eliminando vídeo
+    ARProgrezz.Support.video = !ARProgrezz.Support.video; // Cambiando estado
+    ar_video = new ARProgrezz.Video(); // Creando vídeo
+    
+    // Función tras inicio del vídeo
+    ar_video.onSuccess = function() {
+      signals.changeSignalType('video'); // Cambiando el color de la señal
+      adjustViewer(); // Ajustar dimensiones del visor
+    };
+    
+    ar_video.initVideo(ar_scene, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
+  }
+  
+  /* Activación/desactivación del giroscopio */
+  function changeGyroscope() {
+    
+    ar_controls.disarmGyroscope(); // Desactivando giroscopio
+    
+    ARProgrezz.Support.gyroscope = !ARProgrezz.Support.gyroscope // Cambiando estado
+    
+    signals.changeSignalType('gyroscope'); // Cambiando el color de la señal
+    ar_controls.activateGyroscope(); // Activando giroscopio para el nuevo estado
+  }
+  
   /* Inicializar visor de realidad aumentada */
   this.initViewer = function(settings) {
     
@@ -324,7 +344,9 @@ ARProgrezz.Viewer = function (settings) {
     // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
     ARProgrezz.Utils.waitCallback(checked, function () {
       
-      var signals = new ARProgrezz.Support.Signals(); // Avisos
+      ARProgrezz.Support.onChangeVideo = changeVideo; // Función de activación/desactivación del vídeo
+      ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
+      signals = new ARProgrezz.Support.Signals(); // Avisos
       
       // Inicializar realidad aumentada
       initAR( function () {
@@ -336,7 +358,7 @@ ARProgrezz.Viewer = function (settings) {
         ar_video.onSuccess = function() {
           
           // Creación del botón indicador de visión estereoscópica
-          initStereoButton(); // TODO Esto no debería ir aquí
+          initStereoButton();
           
           // Evento de ajuste de dimensiones y posición del visor
           adjustViewer();

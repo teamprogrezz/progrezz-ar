@@ -5,6 +5,7 @@ ARProgrezz.Video = function () {
   var scope = this; // Ámbito
     
   this.arVideo = null; // Elemento de vídeo
+  this.arVideoStereo = null; // Elemento de vídeo auxiliar para la visión estereoscópica
   this.onSuccess = null; // Función a ejecutar tras inicialización con éxito
   
   var video = null; // Objeto para indicar el estado de la inicialización
@@ -15,10 +16,30 @@ ARProgrezz.Video = function () {
     if (scope.arVideo instanceof ARProgrezz.Video.Panorama)
       scope.arVideo.updateSize();
     else {
-      scope.arVideo.width = window.innerWidth;
+      
       scope.arVideo.height = window.innerHeight;
+      
+      if (!scope.arVideoStereo)
+        scope.arVideo.width = window.innerWidth;
+      else {
+        scope.arVideo.width = window.innerWidth / 2.0;
+        scope.arVideoStereo.width = window.innerWidth / 2.0;
+        scope.arVideoStereo.height = window.innerHeight;
+      }
     }
-  }
+  };
+  
+  /* Eliminación del vídeo */
+  this.removeVideo = function() {
+    
+    if (scope.arVideo instanceof ARProgrezz.Video.Panorama)
+      scope.arVideo.destroy();
+    else {
+      if (scope.arVideoStereo)
+        scope.disarmStereoscopicVideo();
+      document.body.removeChild(scope.arVideo);
+    }
+  };
 
   /* Acceso al vídeo */
   function accessVideo() {
@@ -42,19 +63,56 @@ ARProgrezz.Video = function () {
     // Asignando datos de stream (solicitado por Support) al vídeo
     scope.arVideo.src = window.URL.createObjectURL(ARProgrezz.Support.videoStream);
   }
+  
+  this.disarmStereoscopicVideo = function() {
+    
+    if (scope.arVideo instanceof ARProgrezz.Video.Panorama)
+      return;
+    
+    // Modificando el vídeo original a su tamaño original
+    scope.arVideo.width = window.innerWidth
+    
+    // Eliminando el vídeo auxiliar de la parte derecha
+    document.body.removeChild(scope.arVideoStereo);
+    scope.arVideoStereo = null;
+  }
+  
+  this.activateStereoscopicVideo = function() {
+    
+    if (scope.arVideo instanceof ARProgrezz.Video.Panorama)
+      return;
+    
+    // Modificando vídeo de la parte izquierda
+    scope.arVideo.width = window.innerWidth / 2.0;
+    
+    // Creación del vídeo auxiliar de la parte derecha
+    scope.arVideoStereo = document.createElement('video');
+    scope.arVideoStereo.setAttribute("style", "position: absolute; left: 50%; top: 0px; z-index: -1");
+    scope.arVideoStereo.width = window.innerWidth / 2.0;
+    scope.arVideoStereo.height = window.innerHeight;
+    scope.arVideoStereo.autoplay = true;
+    
+    document.body.appendChild(scope.arVideoStereo);
+    
+    scope.arVideoStereo.src = window.URL.createObjectURL(ARProgrezz.Support.videoStream);
+  }
 
   /* Inicialización del vídeo del visor */
-  this.initVideo = function(scene) {
+  this.initVideo = function(scene, stereoscopic = false) {
     
     // Indicador del estado de acceso
     video = { flag: ARProgrezz.Utils.Flags.WAIT };
     
     // Comprobación de soporte de acceso a la cámara de vídeo y al giroscopio
-    if (ARProgrezz.Support.video && ARProgrezz.Support.gyroscope) {
+    if (ARProgrezz.Support.video /*&& ARProgrezz.Support.gyroscope*/) { // TODO Descomentar
       
       // Accediendo y cargando el vídeo
       accessVideo();
       
+      // Creando vídeo en modo estereoscópico
+      if (stereoscopic)
+        scope.activateStereoscopicVideo();
+        
       // Esperando a que el vídeo se cargue correctamente
       ARProgrezz.Utils.waitCallback(video, scope.onSuccess);
     }
@@ -86,6 +144,7 @@ ARProgrezz.Video.Panorama = function(scene) {
   var WIDTH_SEGMENTS = 45, HEIGHT_SEGMENTS = 30;
   
   var p_scene = scene; // Escena 3D del visor
+  var panorama; // Panorama equirectangular
   
   /* Redimensionado del "vídeo" */
   this.updateSize = function() {
@@ -105,9 +164,15 @@ ARProgrezz.Video.Panorama = function(scene) {
     
     var material = new THREE.MeshBasicMaterial({ map: texture });
     
-    var panorama = new THREE.Mesh( geometry, material );
+    panorama = new THREE.Mesh( geometry, material );
     p_scene.add(panorama);
   }
+  
+  /* Destructor */
+  this.destroy = function() {
+    
+    p_scene.remove(panorama);
+  };
   
   init();
 };
