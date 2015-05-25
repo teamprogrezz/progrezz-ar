@@ -49,22 +49,18 @@ ARProgrezz.PositionControls = function (camera) {
   
   /* Inicio de toque */
   function onTouchStart( event ) {
-
-    event.preventDefault();
-
+    
     onTouchEvent = true;
-
+    
     targetX = event.targetTouches[0].clientX;
     targetY = event.targetTouches[0].clientY;
-
+    
     targetLon = lon;
     targetLat = lat;
   }
 
   /* Movimiento de toque */
   function onTouchMove( event ) {
-    
-    event.preventDefault();
     
     if (onTouchEvent) {
       lon = ( targetX - event.targetTouches[0].clientX ) * TOUCH_ROTATION_SPEED + targetLon;
@@ -74,9 +70,7 @@ ARProgrezz.PositionControls = function (camera) {
 
   /* Finalización de toque */
   function onTouchEnd( event ) {
-
-    event.preventDefault();
-  
+    
     onTouchEvent = false;
   }
   

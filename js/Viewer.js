@@ -144,6 +144,7 @@ ARProgrezz.Viewer = function (settings) {
       
     ar_renderer.setClearColor( 0x000000, 0 );
     ar_renderer.setPixelRatio( window.devicePixelRatio );
+    ar_renderer.autoClear = false;
     document.body.appendChild(ar_renderer.domElement);
     
     ar_stereo = new THREE.StereoEffect(ar_renderer);
@@ -204,6 +205,9 @@ ARProgrezz.Viewer = function (settings) {
       updateObjects(); // Actualizando objetos
       
       ar_controls.update(); // Actualizando cámara
+      
+      if (scope.settings.mode === 'normal')
+        ar_renderer.clear(); // Limpiando escena
       
       real_renderer.render(ar_scene, ar_camera); // Renderizado
     }
