@@ -30,10 +30,8 @@ ARProgrezz.PositionControls = function (camera) {
   var firstTime; // Indica acceso a la geolocalización por primera vez
   var updating; // Indica si se están actualizando las coordenadas
   var geoInited; // Indica si se ha iniciado la geolocalización
-  var originLatitude = 0; // Latitud de inicio del visor
-  var originLongitude = 0; // Longitud de inicio del visor
-  var currentLatitude = 0; // Latitud actual del visor
-  var currentLongitude = 0; // Longitud actual del visor
+  var originLatitude = 0; // Latitud de inicio del visor - coordenada z = 0
+  var originLongitude = 0; // Longitud de inicio del visor - coordenada x = 0
   
   /* Cambio de orientación del dispositivo */
   var onDeviceOrientationChange = function(event) {
@@ -47,7 +45,7 @@ ARProgrezz.PositionControls = function (camera) {
   var onScreenOrientationChange = function(event) {
     
     screenOrientation = window.orientation || 0;
-  }
+  };
   
   /* Inicio de toque */
   function onTouchStart( event ) {
@@ -188,14 +186,6 @@ ARProgrezz.PositionControls = function (camera) {
     return d;
   }
   
-  /* Actualización de la posición de la cámara */
-  function updateObject() {
-    
-    // Actualizando eje X (Longitud) y eje Z (Latitud invertida)
-    camera.position.setX(scope.getObjectX(currentLongitude));
-    camera.position.setZ(scope.getObjectZ(currentLatitude));
-  }
-  
   /* Posición en el eje Z de un objeto, dada su latitud */
   this.getObjectZ = function(latitude) {
     return distanceTwoLats(originLatitude, latitude) * ((originLatitude < latitude)? -1 : 1);
@@ -252,20 +242,14 @@ ARProgrezz.PositionControls = function (camera) {
       
       updating = true;
       
+      originLatitude = pos.coords.latitude;
+      originLongitude = pos.coords.longitude;
+      
       if (firstTime) {
         
-        originLatitude = currentLatitude = pos.coords.latitude;
-        originLongitude = currentLongitude = pos.coords.longitude;
         firstTime = false;
         geoInited.flag = ARProgrezz.Utils.Flags.SUCCESS;
       }
-      else {
-        
-        currentLatitude = pos.coords.latitude;
-        currentLongitude = pos.coords.longitude;
-      }
-      
-      updateObject();
       
       updating = false;
     };

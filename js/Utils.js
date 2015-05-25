@@ -16,7 +16,7 @@ ARProgrezz.Utils = {};
     Number.prototype.toRad = function() {
       return this * Math.PI / 180;
     }
-  }
+  };
   
   var WAIT_DELAY = 200; // (ms) Retardo de espera a Callbacks
 
@@ -54,7 +54,7 @@ ARProgrezz.Utils = {};
     var path = null;
     
     for (var i = 0; i < scripts.length; i++) {
-      if (scripts[i].src != "")
+      if (scripts[i].src !== "")
         path = scripts[i].src;
       if (scripts[i].src.search("ARProgrezz.js") != -1) {
         path = scripts[i].src;

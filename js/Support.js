@@ -3,7 +3,7 @@
 ARProgrezz.Support = {};
 (function(namespace){
   
-  var GEO_TIMEOUT = 8000 // (ms)
+  var GEO_TIMEOUT = 8000; // (ms)
   var SIGNAL_ON_COLOR = "#55FC18"; // green
   var SIGNAL_OFF_COLOR = "#666666"; // gray
   
@@ -98,11 +98,10 @@ ARProgrezz.Support = {};
         
         // Seleccionando la cámara trasera del dispositivo
         var videoSource = null;
-        for (s in sourceInfos)
-          if (sourceInfos[s].kind === 'video' && sourceInfos[s].facing != 'user') {
-            alert(JSON.stringify(sourceInfos[s]));
+        for (s in sourceInfos) {
+          if (sourceInfos[s].kind === 'video' && sourceInfos[s].facing != 'user')
             videoSource = sourceInfos[s].id;
-          }
+        }
         
         accessVideo({video: {optional: [{sourceId: videoSource}]}, audio: false}, end_function);
       });
@@ -162,7 +161,7 @@ ARProgrezz.Support = {};
       // Callback de acceso a la geolocalización
       namespace.geoCallback = function(position) {
         
-        if (namespace.geolocation != null)
+        if (namespace.geolocation !== null)
           return;
         
         namespace.geolocation = available.geolocation = true;

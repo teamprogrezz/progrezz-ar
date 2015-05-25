@@ -39,5 +39,5 @@ ARProgrezz.Preloader = function() {
     inited = false;
     
     document.body.removeChild(load_screen);
-  }
+  };
 }

@@ -6,8 +6,9 @@ ARProgrezz.Viewer = function (settings) {
   
   /* Ajustes del visor */
   this.settings = {
-    mode: 'normal' // 'normal' || 'stereoscopic'
-  }
+    mode: 'normal', // 'normal' || 'stereoscopic'
+    range: 50 // Distancia máxima (m) a la que se ven los objetos
+  };
   
   /* Atributos */
   this.inited = false; // Indicador de si ha sido iniciado
@@ -19,8 +20,8 @@ ARProgrezz.Viewer = function (settings) {
   var ORIENTATION_DELAY = 300 // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
   var GAME_FOV = 60; // (º) Campo de visión
   var STEREO_EYE_SEPARATION = 5; // Separación entre los ojos para visión estereoscópica
-  // TODO Cambiar el rango de visión, para que el máximo corresponda con el área del mensaje del jugador
-  var MIN_VISION = 0.1, MAX_VISION = 3000; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
+  var AUX_VISION = 50; // Distancia (m) auxiliar, para ver siempre lo que hay a máximo rango
+  var MIN_VISION = 0.1, MAX_VISION; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
   var STEREO_ICON_PATH = "/img/icons/stereo.png";
   var STEREO_WHITE_ICON_PATH = "/img/icons/stereo-white.png";
   
@@ -41,24 +42,35 @@ ARProgrezz.Viewer = function (settings) {
   /* Actualización de ajustes */
   function updateSettings(sets) {
     for (s in sets)
-      this.settings[s] = sets[s];
+      scope.settings[s] = sets[s];
   }
   
-  /* Activación/desactivación de la visión estereoscópica */
+  /* Activación de la visión estereoscópica */
   function activateStereoscopy() {
     
-    if (scope.settings.mode === 'normal') { // Activación del modo estereoscópico
-      scope.settings.mode = 'stereoscopic';
-      real_renderer = ar_stereo;
-      stereo_signal.style.backgroundColor = "#55FC18";
-      ar_video.activateStereoscopicVideo();
-    }
-    else if (scope.settings.mode === 'stereoscopic') { // Desactivación del modo estereoscópico
-      scope.settings.mode = 'normal';
-      real_renderer = ar_renderer;
-      stereo_signal.style.backgroundColor = "#666666";
-      ar_video.disarmStereoscopicVideo();
-    }
+    scope.settings.mode = 'stereoscopic';
+    real_renderer = ar_stereo;
+    stereo_signal.style.backgroundColor = "#55FC18";
+    ar_video.activateStereoscopicVideo();
+  }
+  
+  /* Desactivación de la visión estereoscópica */
+  function deactivateStereoscopy() {
+    
+    scope.settings.mode = 'normal';
+    real_renderer = ar_renderer;
+    stereo_signal.style.backgroundColor = "#666666";
+    ar_video.disarmStereoscopicVideo();
+  }
+  
+  /* Cambio del estado de la visión estereoscópica */
+  function changeStereoscopy() {
+    
+    if (scope.settings.mode === 'normal') // Activación del modo estereoscópico
+      activateStereoscopy();
+    else if (scope.settings.mode === 'stereoscopic') // Desactivación del modo estereoscópico
+      deactivateStereoscopy();
+    
     adjustViewer();
   }
   
@@ -94,7 +106,7 @@ ARProgrezz.Viewer = function (settings) {
     stereo_signal.addEventListener("touchend", setImage);
     stereo_signal.addEventListener("touchcancel", setImage);
     
-    stereo_signal.addEventListener("click", activateStereoscopy);
+    stereo_signal.addEventListener("click", changeStereoscopy);
     
     container.appendChild(stereo_signal);
     document.body.appendChild(container);
@@ -109,7 +121,8 @@ ARProgrezz.Viewer = function (settings) {
   function initPlayer(onPlayerInit) {
 
     // Creación de la cámara que representa la visión del jugador
-    ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION);
+    MAX_VISION = scope.settings.range;
+    ar_camera = new THREE.PerspectiveCamera(GAME_FOV, window.innerWidth / window.innerHeight, MIN_VISION, MAX_VISION + AUX_VISION);
     
     // Creación del controlador de posición y orientación del jugador
     ar_controls = new ARProgrezz.PositionControls(ar_camera);
@@ -139,7 +152,7 @@ ARProgrezz.Viewer = function (settings) {
     // Selección del modo
     if (scope.settings.mode === 'normal') // Modo normal
       return ar_renderer;
-    else if (scope.settings.mode === 'stereoscopic')// Modo estereoscópico
+    else if (scope.settings.mode === 'stereoscopic') // Modo estereoscópico
       return ar_stereo;
     else {
       alert("Error: No se reconoce el modo seleccionado (" + scope.settings.mode + ")");
@@ -173,8 +186,10 @@ ARProgrezz.Viewer = function (settings) {
   /* Actualización de los objetos */
   function updateObjects() {
     
-    for (o in objects.children)
-      objects.children[o].ARObject.update(delta);
+    for (o in objects.children) {
+      objects.children[o].ARObject.updateAnimation(delta); // Actualizando animación
+      objects.children[o].ARObject.updatePosition(); // Actualizando posición
+    }
   }
   
   /* Iniciar actualización de la escena */
@@ -207,7 +222,7 @@ ARProgrezz.Viewer = function (settings) {
       
       // Calculando tamaño real del visor de acuerdo al vídeo
       var viewer_ratio = Math.min(ar_video.arVideo.width / ar_video.arVideo.videoWidth, ar_video.arVideo.height / ar_video.arVideo.videoHeight);
-      scope.viewerWidth = viewer_ratio * ar_video.arVideo.videoWidth * ((scope.settings.mode === 'normal' || !ARProgrezz.Support.video)? 1.0 : 2.0);
+      scope.viewerWidth = ((scope.settings.mode === 'normal' || !ARProgrezz.Support.video)? viewer_ratio * ar_video.arVideo.videoWidth : window.innerWidth);
       scope.viewerHeight = viewer_ratio * ar_video.arVideo.videoHeight;
       
       // Calculando relación de aspecto
@@ -304,7 +319,7 @@ ARProgrezz.Viewer = function (settings) {
       adjustViewer(); // Ajustar dimensiones del visor
     };
     
-    ar_video.initVideo(ar_scene, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
+    ar_video.initVideo(ar_scene, scope.settings.range, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
   }
   
   /* Activación/desactivación del giroscopio */
@@ -338,6 +353,7 @@ ARProgrezz.Viewer = function (settings) {
     // Comprobando soporte de tecnologías
     var checked = { flag: ARProgrezz.Utils.Flags.WAIT };
     ARProgrezz.Support.check( function () {
+      
       checked.flag = ARProgrezz.Utils.Flags.SUCCESS;
     });
     
@@ -383,7 +399,7 @@ ARProgrezz.Viewer = function (settings) {
         };
         
         // Inicializar vídeo
-        ar_video.initVideo(ar_scene);
+        ar_video.initVideo(ar_scene, scope.settings.range, (scope.settings.mode === 'stereoscopic'));
       });
     });
   }
@@ -396,7 +412,7 @@ ARProgrezz.Viewer = function (settings) {
     // Creación del objeto dependiendo del tipo
     switch(options.type) {
       case 'basic':
-        object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect, ar_controls);
+        object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect, ar_controls, ar_renderer.getMaxAnisotropy(), scope.settings.range);
       break;
       default:
         console.log("Error: Tipo de objeto '" + options.type + "' desconocido");

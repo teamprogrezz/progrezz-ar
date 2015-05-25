@@ -46,7 +46,11 @@ ARProgrezz.Video = function () {
     
     // Estableciendo formato del vídeo
     scope.arVideo = document.createElement('video');
-    scope.arVideo.setAttribute("style", "position: absolute; left: 0px; top: 0px; z-index: -1");
+    scope.arVideo.setAttribute("style", "position: absolute;" +
+                                        "left: 0px;" +
+                                        "top: 0px;" +
+                                        "z-index: -1;" +
+                                        "background-size: cover;");
     scope.arVideo.width = window.innerWidth;
     scope.arVideo.height = window.innerHeight;
     scope.arVideo.autoplay = true;
@@ -55,7 +59,7 @@ ARProgrezz.Video = function () {
       
       // Estableciendo el vídeo como cargado, requisito para continuar con el resto de inicializaciones
       video.flag = ARProgrezz.Utils.Flags.SUCCESS;
-    }
+    };
         
     // Añadiendo el vídeo al documento
     document.body.appendChild(scope.arVideo);
@@ -70,12 +74,12 @@ ARProgrezz.Video = function () {
       return;
     
     // Modificando el vídeo original a su tamaño original
-    scope.arVideo.width = window.innerWidth
+    scope.arVideo.width = window.innerWidth;
     
     // Eliminando el vídeo auxiliar de la parte derecha
     document.body.removeChild(scope.arVideoStereo);
     scope.arVideoStereo = null;
-  }
+  };
   
   this.activateStereoscopicVideo = function() {
     
@@ -95,10 +99,10 @@ ARProgrezz.Video = function () {
     document.body.appendChild(scope.arVideoStereo);
     
     scope.arVideoStereo.src = window.URL.createObjectURL(ARProgrezz.Support.videoStream);
-  }
+  };
 
   /* Inicialización del vídeo del visor */
-  this.initVideo = function(scene, stereoscopic = false) {
+  this.initVideo = function(scene, range, stereoscopic) {
     
     // Indicador del estado de acceso
     video = { flag: ARProgrezz.Utils.Flags.WAIT };
@@ -119,17 +123,17 @@ ARProgrezz.Video = function () {
     else {
       
       // Creando panorama como alternativa al vídeo
-      scope.arVideo = new ARProgrezz.Video.Panorama(scene);
+      scope.arVideo = new ARProgrezz.Video.Panorama(scene, range);
       
       if (scope.onSuccess)
         scope.onSuccess();
     }
-  }
+  };
   
 };
 
 /* Alternativa al vídeo: panorama a partir de imagen equirectangular */
-ARProgrezz.Video.Panorama = function(scene) {
+ARProgrezz.Video.Panorama = function(scene, radius) {
   
   var scope = this; // Ámbito
   
@@ -140,10 +144,10 @@ ARProgrezz.Video.Panorama = function(scene) {
   this.videoHeight = window.innerHeight;
   
   // Constantes
-  var RADIUS = 1000; // TODO Tener cuidado, para que el radio de esto sea igual al rango máximo de la cámara
-  var WIDTH_SEGMENTS = 45, HEIGHT_SEGMENTS = 30;
+  var WIDTH_SEGMENTS = 45, HEIGHT_SEGMENTS = 30; // Segmentos en horizontal y vertical
   
   var p_scene = scene; // Escena 3D del visor
+  var p_radius = radius; // Radio de la esfera del panorama
   var panorama; // Panorama equirectangular
   
   /* Redimensionado del "vídeo" */
@@ -151,14 +155,14 @@ ARProgrezz.Video.Panorama = function(scene) {
     
     scope.videoWidth = scope.width = window.innerWidth;
     scope.videoHeight = scope.height = window.innerHeight;
-  }
+  };
   
   /* Constructor */
   function init() {
     
-    var geometry = new THREE.SphereGeometry( RADIUS, WIDTH_SEGMENTS, HEIGHT_SEGMENTS );
+    var geometry = new THREE.SphereGeometry( p_radius, WIDTH_SEGMENTS, HEIGHT_SEGMENTS );
     geometry.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
-
+    
     var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + '/img/textures/equirectangular_city.jpg' );
     texture.minFilter = THREE.LinearFilter;
     

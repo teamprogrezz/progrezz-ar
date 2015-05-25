@@ -3,12 +3,13 @@
 ARProgrezz.Object = {};
 
 /* Objecto básico - Tetraedro */
-ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControls) {
+ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControls, anisotropy, range) {
   
   var scope = this; // Ámbito
   
   /* Constantes */
-  var OBJECT_RADIUS = 3; // Radio del objeto
+  var RADIUS_RATIO = 0.03; // Relación entre el rango de visión y el radio de un objeto para la adecuación en tamaño de los objetos en rango
+  var OBJECT_RADIUS = 1.5; // Radio del objeto
   var ROTATION = 0.4; // Velocidad de rotación del objeto
   var REDUCTION_BASE = 0.15; // Constante que indica la reducción de escalan del objeto
   var REDUCTION_ACCELERATION = 3; // Determina el aumento de velocidad en la reducción de escala del objeto
@@ -50,18 +51,28 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
   };
   
   /* Actualizar frame del objeto */
-  this.update = function(delta) {
+  this.updateAnimation = function(delta) {
     
     if (scope.collectable && selected) {
       
+      var reduction = (REDUCTION_BASE + (1 - Math.pow(scope.threeObject.scale.x, REDUCTION_ACCELERATION))) * delta; // Reducción con aumento de aceleración
+      
       // Comprobación de si se ha llegado o no al tamaño mínimo
-      if (scope.threeObject.scale.x > 0)
-        scope.threeObject.scale.addScalar(-(REDUCTION_BASE + (1 - Math.pow(scope.threeObject.scale.x, REDUCTION_ACCELERATION))) * delta); // Reducción con aumento de aceleración
+      if ((scope.threeObject.scale.x - reduction) > 0)
+        scope.threeObject.scale.addScalar(-reduction); // Aplicando reducción a la escala
       else
         scope.threeObject.visible = false; // Se hace invisible el objeto
     }
     
     scope.threeObject.rotation.y += ROTATION * delta; // Rotación
+  };
+  
+  /* Actualización de la posición */
+  this.updatePosition = function() {
+    
+    // Ajustando posición de acuerdo a la latitud y longitud
+    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude); // Latitud -> Eje Z (invertido)
+    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude); // Longitud -> Eje X
   };
   
   /* Función por defecto de respuesta a evento */
@@ -87,6 +98,9 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
       
     if (onSelectEvent)
       scope.onSelect = onSelectEvent; // Función de respuesta a evento
+      
+    if (range)
+      OBJECT_RADIUS = range * RADIUS_RATIO;
   }
   
   /* Creación del objeto */
@@ -97,8 +111,8 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
     
     // Creando textura
     var texture = THREE.ImageUtils.loadTexture( ARProgrezz.Utils.rootDirectory() + IMAGE_PATH);
-		//texture.anisotropy = ar_renderer.getMaxAnisotropy();
-
+    texture.anisotropy = anisotropy;
+    
     // Creando objeto de Three.js
 		var material = new THREE.MeshBasicMaterial( { map: texture } );
     var geometry = new THREE.OctahedronGeometry(OBJECT_RADIUS, 0);
@@ -106,10 +120,9 @@ ARProgrezz.Object.Basic = function(coords, collectable, onSelectEvent, arControl
     scope.threeObject = new THREE.Mesh(geometry, material);
     scope.threeObject.ARObject = scope; // Referencia al contenedor del objeto
     
-    // Ajustando posición de acuerdo a la latitud y longitud
-    scope.threeObject.position.z = positionControls.getObjectZ(scope.latitude); // Latitud -> Eje Z (invertido)
-    scope.threeObject.position.x = positionControls.getObjectX(scope.longitude); // Longitud -> Eje X
+    // Inicializando posición
+    scope.updatePosition();
   }
   
   init();
-}
+};
