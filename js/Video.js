@@ -108,7 +108,7 @@ ARProgrezz.Video = function () {
     video = { flag: ARProgrezz.Utils.Flags.WAIT };
     
     // Comprobación de soporte de acceso a la cámara de vídeo y al giroscopio
-    if (ARProgrezz.Support.video /*&& ARProgrezz.Support.gyroscope*/) { // TODO Descomentar
+    if (ARProgrezz.Support.video && ARProgrezz.Support.gyroscope) {
       
       // Accediendo y cargando el vídeo
       accessVideo();

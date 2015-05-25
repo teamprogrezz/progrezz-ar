@@ -40,13 +40,13 @@ ARProgrezz.Support = {};
       }
       
       checkGyroscope(function() {
-        // TODO Descomentar
-        /*if (!available.gyroscope) { // Sin giroscopio, no es necesario comprobar la carga del vídeo
+        
+        if (!available.gyroscope) { // Sin giroscopio, no es necesario comprobar la carga del vídeo
           available.video = namespace.video = false;
           if (end_function)
             end_function();
           return;
-        }*/
+        }
         
         checkVideoCamera(function() {
           if (end_function)
@@ -196,11 +196,11 @@ ARProgrezz.Support = {};
   
   /* Solicitud de activación/desactivación del vídeo */
   function activateVideo() {
-    // TODO Descomentar
-    /*if (!namespace.gyroscope) {
+    
+    if (!namespace.gyroscope) {
       alert(">> No se puede activar el vídeo con el giroscopio desactivado <<");
       return;
-    }*/
+    }
     
     if (!available.video) {
       alert(">> Vídeo no disponible <<");
