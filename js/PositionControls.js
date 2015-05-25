@@ -7,7 +7,7 @@ ARProgrezz.PositionControls = function (camera) {
   this.camera = camera; // Cámara controlada
   this.camera.rotation.reorder( "YXZ" ); // Disposición de los ejes a utilizar (YXZ)
   
-  this.enabled = true; // Indicador de controles activados
+  this.giroscopeEnabled = false; // Indicador de controles activados
   
   this.onInit = null; // Función a ejecutar tras inicialización
   
@@ -27,13 +27,11 @@ ARProgrezz.PositionControls = function (camera) {
   var phi = 0, theta = 0; // Grados que determinan rotación de la cámara
   
   // Geolocation
-  var firstTime; // TODO Comentar debidamente
-  var updating;
-  var geoInited;
-  var originLatitude = 0;
-  var originLongitude = 0;
-  var currentLatitude = 0;
-  var currentLongitude = 0;
+  var firstTime; // Indica acceso a la geolocalización por primera vez
+  var updating; // Indica si se están actualizando las coordenadas
+  var geoInited; // Indica si se ha iniciado la geolocalización
+  var originLatitude = 0; // Latitud de inicio del visor - coordenada z = 0
+  var originLongitude = 0; // Longitud de inicio del visor - coordenada x = 0
   
   /* Cambio de orientación del dispositivo */
   var onDeviceOrientationChange = function(event) {
@@ -47,26 +45,22 @@ ARProgrezz.PositionControls = function (camera) {
   var onScreenOrientationChange = function(event) {
     
     screenOrientation = window.orientation || 0;
-  }
+  };
   
   /* Inicio de toque */
   function onTouchStart( event ) {
-
-    event.preventDefault();
-
+    
     onTouchEvent = true;
-
+    
     targetX = event.targetTouches[0].clientX;
     targetY = event.targetTouches[0].clientY;
-
+    
     targetLon = lon;
     targetLat = lat;
   }
 
   /* Movimiento de toque */
   function onTouchMove( event ) {
-    
-    event.preventDefault();
     
     if (onTouchEvent) {
       lon = ( targetX - event.targetTouches[0].clientX ) * TOUCH_ROTATION_SPEED + targetLon;
@@ -76,9 +70,7 @@ ARProgrezz.PositionControls = function (camera) {
 
   /* Finalización de toque */
   function onTouchEnd( event ) {
-
-    event.preventDefault();
-  
+    
     onTouchEvent = false;
   }
   
@@ -102,8 +94,8 @@ ARProgrezz.PositionControls = function (camera) {
     event.preventDefault();
     
     if (onMouseEvent) {
-      lon = ( targetX - event.clientX ) * MOUSE_ROTATION_SPEED + targetLon;
-      lat = ( event.clientY - targetY ) * MOUSE_ROTATION_SPEED + targetLat;
+      lon = ( targetX - event.clientX ) * MOUSE_ROTATION_SPEED + targetLon; // Grados de desplazamiento en horizontal
+      lat = ( event.clientY - targetY ) * MOUSE_ROTATION_SPEED + targetLat; // Grados de desplazamiento en vertical
     }
   }
 
@@ -118,32 +110,37 @@ ARProgrezz.PositionControls = function (camera) {
   /* Actualizando la cámara */
   this.update = function () {
 
-    if (!scope.enabled)
+    if (!scope.giroscopeEnabled)
       return;
     
+    // Actualizado de acuerdo al giroscopio
     if (ARProgrezz.Support.gyroscope) {
+      
+      // Ángulos de rotación del dispositivo
       var alpha = deviceOrientation.alpha ? THREE.Math.degToRad( deviceOrientation.alpha.toFixed(5) ) : 0; // Z
       var beta = deviceOrientation.beta  ? THREE.Math.degToRad( deviceOrientation.beta.toFixed(5) ) : 0; // X
       var gamma = deviceOrientation.gamma ? THREE.Math.degToRad( deviceOrientation.gamma.toFixed(5) ) : 0; // Y
-      var orient = screenOrientation ? THREE.Math.degToRad( screenOrientation ) : 0; // Orientation
+      var orient = screenOrientation ? THREE.Math.degToRad( screenOrientation ) : 0; // Orientación
       
+      // Modificando el cuaternión de la cámara (determina su orientación), de acuerdo a los ángulos de rotación del dispositivo
       setObjectQuaternion(scope.camera.quaternion, alpha, beta, gamma, orient);
     }
+    // Actualizado a partir de eventos
     else {
-      lat = Math.max( - 85, Math.min( 85, lat ) );
-      phi = THREE.Math.degToRad( 90 - lat );
-      theta = THREE.Math.degToRad( lon );
+      lat = Math.max( - 89, Math.min( 89, lat ) ); // Acotando grados de desplazamiento vertical entre -89º y 89º (para evitar dar la vuelta completa en ese sentido)
+      phi = THREE.Math.degToRad( 90 - lat ); // Ángulo de desplazamiento vertical
+      theta = THREE.Math.degToRad( lon ); // Ángulo de desplazamiento horizontal
       
-      visionTarget.x = 3000 * Math.sin( phi ) * Math.cos( theta );
-      visionTarget.y = 3000 * Math.cos( phi );
-      visionTarget.z = 3000 * Math.sin( phi ) * Math.sin( theta );
-      scope.camera.lookAt( visionTarget );
-      // TODO Mirar que cojones se hace realmente
+      // Estableciendo coordenadas del vector de acuerdo a los ángulos de desplazamiento
+      visionTarget.x = Math.sin(phi) * Math.cos(theta);
+      visionTarget.y = Math.cos(phi);
+      visionTarget.z = Math.sin(phi) * Math.sin(theta);
+      scope.camera.lookAt(visionTarget); // Asignando la orientación de la cámara en el sentido del vector
     }
 
   };
   
-  // TODO Cambiar esto de forma que tenga sentido para mi
+  /* Modificación de un cuaternión de acuerdo a la posición del dispositivo */
   var setObjectQuaternion = function () {
 
     var zee = new THREE.Vector3( 0, 0, 1 );
@@ -153,16 +150,15 @@ ARProgrezz.PositionControls = function (camera) {
 
     return function ( quaternion, alpha, beta, gamma, orient ) {
 
-      euler.set( beta, alpha, - gamma, 'YXZ' );                       // Cambiamos el'ZXY' del dispositivo, por la convención 'YXZ' 
+      euler.set( beta, alpha, - gamma, 'YXZ' );                       // Se cambia el'ZXY' del dispositivo, por la convención 'YXZ' 
       quaternion.setFromEuler( euler );                               // Orientando el dispositivo
       quaternion.multiply( q1 );                                      // Cámara observa a la parte trasera del dispositivo, en lugar de la delantera
       quaternion.multiply( q0.setFromAxisAngle( zee, - orient ) );    // Actualizando cámara en función de la orientación del dispositivo
     }
-
+    
   }();
   
-  // TODO Completar la geolocalización, e inicar una cosa u otra dependiendo de lo disponible, y permitir desactivar y activar en cada momento
-  // TODO Funciones para obtener posiciones de los objetos
+  /* Distancia (m) entre dos latitudes */
   function distanceTwoLats (lat1, lat2) {
     var R = 6371; // Radio medio de la tierra (km)
     var dLat = (lat2 - lat1).toRad();
@@ -174,6 +170,7 @@ ARProgrezz.PositionControls = function (camera) {
     return d;
   }
   
+  /* Distancia (m) entre dos longitudes */
   function distanceTwoLongs (lon1, lon2) {
     var R = 6371; // Radio medio de la tierra (km)
     var dLon = (lon2 - lon1).toRad();
@@ -183,31 +180,17 @@ ARProgrezz.PositionControls = function (camera) {
     return d;
   }
   
-  function updateObject() {
-    
-    // TODO Revisar para cuando cruces el meridiano y ecuador y esas cosas, no liarla
-    if(originLatitude < currentLatitude)  {
-      camera.position.setX(distanceTwoLats(originLatitude, currentLatitude));
-    }
-    else {
-      camera.position.setX(-distanceTwoLats(originLatitude, currentLatitude));
-    }
-    if(originLongitude < currentLongitude)  {
-      camera.position.setZ(distanceTwoLongs(originLongitude, currentLongitude));
-    }
-    else {
-      camera.position.setZ(-distanceTwoLongs(originLongitude, currentLongitude));
-    }
-  }
-  
+  /* Posición en el eje Z de un objeto, dada su latitud */
   this.getObjectZ = function(latitude) {
     return distanceTwoLats(originLatitude, latitude) * ((originLatitude < latitude)? -1 : 1);
   };
   
+  /* Posición en el eje X de un objeto, dada su longitud */
   this.getObjectX = function(longitude) {
     return distanceTwoLongs(originLongitude, longitude) * ((originLongitude < longitude)? 1 : -1);
   };
 
+  /* Iniciando giroscopio */
   function initGyroscope() {
     
     if (ARProgrezz.Support.gyroscope) {
@@ -242,62 +225,56 @@ ARProgrezz.PositionControls = function (camera) {
     }
   }
   
+  /* Iniciando geolocalización */
   function initGeolocation() {
-    // TODO Hay que esperar a que se ejecute por primera vez
-    navigator.geolocation.watchPosition(
-      function(pos) {
-        
-        if (updating)
-          return;
-        
-        updating = true;
-        
-        if (firstTime) {
-          console.log("Aquí estoy");
-          originLatitude = currentLatitude = pos.coords.latitude;
-          originLongitude = currentLongitude = pos.coords.longitude;
-          firstTime = false;
-          geoInited.flag = ARProgrezz.Utils.Flags.SUCCESS;
-        }
-        else {
-          currentLatitude = pos.coords.latitude;
-          currentLongitude = pos.coords.longitude;
-        }
-        
-        updateObject();
-        
-        updating = false;
-      },
-      function() {
-        alert("No se ha podido T.T"); 
-      }
-    );
     
-    setInterval(data,5000);
-    function data() {
+    // Cambiando callback de geolocalización para actualización del jugador
+    ARProgrezz.Support.geoCallback = function(pos) {
+        
+      if (updating)
+        return;
       
-      //alert(originLatitude + " " + originLongitude + "\n" + currentLatitude + " " + currentLongitude + "\n" + camera.position.x + " " + camera.position.z);
-    }
-    
+      updating = true;
+      
+      originLatitude = pos.coords.latitude;
+      originLongitude = pos.coords.longitude;
+      
+      if (firstTime) {
+        
+        firstTime = false;
+        geoInited.flag = ARProgrezz.Utils.Flags.SUCCESS;
+      }
+      
+      updating = false;
+    };
   }
   
   // Activando los controles
   this.activate = function() {
     
-    firstTime = true; // TODO Comentar debidamente
-    updating = false;
-    geoInited = { flag: ARProgrezz.Utils.Flags.WAIT };
+    firstTime = true; // Indicando que la geolocalización se actualiza la primera vez
+    updating = false; // Indicando que no se está actualizando
+    geoInited = { flag: ARProgrezz.Utils.Flags.WAIT }; // Indicando que no se ha iniciado la geolocalización
     
+    // Iniciando giroscopio y geoocalización
     initGyroscope();
     initGeolocation();
     
-    scope.enabled = true;
+    scope.giroscopeEnabled = true;
     
+    // Esperando a la inicialización de la geolocalización
     ARProgrezz.Utils.waitCallback(geoInited, function() {
       if (scope.onInit)
         scope.onInit();
     });
     
+  };
+  
+  /* Activando giroscopio */
+  this.activateGyroscope = function() {
+    
+    initGyroscope();
+    scope.giroscopeEnabled = true;
   };
   
   /* Desactivando giroscopio */
@@ -321,21 +298,8 @@ ARProgrezz.PositionControls = function (camera) {
       document.removeEventListener( 'mousemove', onMouseMove, false );
       document.removeEventListener( 'mouseup', onMouseUp, false );
     }
-  }
-  
-  /* Desactivando geolocalización */
-  this.disarmGeolocation = function() {
     
-    
+    scope.giroscopeEnabled = false;
   }
-
-  /* Desactivando los controles */
-  this.disarm = function() {
-    // TODO Esto no tiene sentido en sí
-    //window.removeEventListener( 'orientationchange', onScreenOrientationChange, false );
-    //window.removeEventListener( 'deviceorientation', onDeviceOrientationChange, false );
-
-    scope.enabled = false;
-  };
   
 }

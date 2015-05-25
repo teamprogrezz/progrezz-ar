@@ -3,18 +3,25 @@
 ARProgrezz.Support = {};
 (function(namespace){
   
-  var GEO_TIMEOUT = 8000 // (ms)
+  var GEO_TIMEOUT = 8000; // (ms)
+  var SIGNAL_ON_COLOR = "#55FC18"; // green
+  var SIGNAL_OFF_COLOR = "#666666"; // gray
   
   // Tecnologías activadas
   namespace.video = null;
   namespace.gyroscope = null;
   namespace.geolocation = null;
   
-  // Función de acceso a vídeo
-  namespace.accessVideo = null;
+  // Funciones de activación/desactivación
+  namespace.onChangeVideo = null;
+  namespace.onChangeGyroscope = null;
+  namespace.onChangeGeolocation = null;
   
   // Vídeo stream
   namespace.videoStream = null;
+  
+  // Callback de obtención de coordenadas
+  namespace.geoCallback = null;
   
   // Tecnologías soportadas
   var available = {
@@ -25,9 +32,23 @@ ARProgrezz.Support = {};
   
   /* Comprobación de acceso a vídeo, giroscopio, y geolocalización */
   namespace.check = function(end_function) {
-    checkVideoCamera(function() {
+    checkGeolocation(function() {
+      
+      if (!available.geolocation) { // Si no hay acceso a la geolocalización, se detiene la carga
+        alert(">> El visor no ha podido iniciarse por no ser capaz de acceder a la geolocalización <<");
+        return;
+      }
+      
       checkGyroscope(function() {
-        checkGeolocation(function() {
+        // TODO Descomentar
+        /*if (!available.gyroscope) { // Sin giroscopio, no es necesario comprobar la carga del vídeo
+          available.video = namespace.video = false;
+          if (end_function)
+            end_function();
+          return;
+        }*/
+        
+        checkVideoCamera(function() {
           if (end_function)
             end_function();
         });
@@ -35,25 +56,23 @@ ARProgrezz.Support = {};
     });
   }
   
-  /* Acceso a la cámara de vídeo (getUserMedia) */
-  function checkVideoCamera(end_function) {
+  /* Acceso al vídeo */
+  function accessVideo(constraints, end_function) {
     
-    namespace.accessVideo = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
     
-    if (namespace.accessVideo) {
+    if (navigator.getUserMedia) {
       
       var signal = { flag: ARProgrezz.Utils.Flags.WAIT };
-      
-      navigator.getUserMedia = namespace.accessVideo;
-      
+    
       navigator.getUserMedia (
-        {video: true, audio: false},
-        function(localMediaStream) {
+        constraints, // Reestricciones de acceso a la cámara trasera
+        function(localMediaStream) { // Obteniendo datos de vídeo
           namespace.video = available.video = true;
           namespace.videoStream = localMediaStream;
           signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
         },
-        function(error) {
+        function(error) { // Vídeo no accesible
           available.video = namespace.video = false;
           signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
         }
@@ -64,6 +83,34 @@ ARProgrezz.Support = {};
       
       available.video = namespace.video = false;
       end_function();
+    }
+  }
+  
+  /* Acceso a la cámara de vídeo (getUserMedia) */
+  function checkVideoCamera(end_function) {
+    
+    // Accediendo a la cámara trasera dependiendo del navegador
+    var nav = navigator.userAgent.toLowerCase();
+    
+    if (nav.indexOf("chrome") != -1) { // En Chrome se utiliza por defecto la cámara frontal, por lo que se selecciona la trasera de forma manual
+      
+      MediaStreamTrack.getSources(function(sourceInfos) {
+        
+        // Seleccionando la cámara trasera del dispositivo
+        var videoSource = null;
+        for (s in sourceInfos) {
+          if (sourceInfos[s].kind === 'video' && sourceInfos[s].facing != 'user')
+            videoSource = sourceInfos[s].id;
+        }
+        
+        accessVideo({video: {optional: [{sourceId: videoSource}]}, audio: false}, end_function);
+      });
+    }
+    else if (nav.indexOf("firefox") != -1) { // En Firefox el usuario decide que cámara compartir
+      accessVideo({video: true, audio: false}, end_function);
+    }
+    else { // Otros navegadores - Acceso estándar
+      accessVideo({video: true, audio: false}, end_function);
     }
   }
   
@@ -106,21 +153,21 @@ ARProgrezz.Support = {};
   
   /* Acceso a la geolocalización */
   function checkGeolocation(end_function) {
-    // TODO Si no encuentra la geolocalización puede quedarse años, ponerle un límite de espera
+    
     if (navigator.geolocation) {
       
       var signal = { flag: ARProgrezz.Utils.Flags.WAIT };
       
-      navigator.geolocation.getCurrentPosition(
-        function(position) {
-          namespace.geolocation = available.geolocation = true;
-          signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
-        },
-        function(error) {
-          available.geolocation = namespace.geolocation = false;
-          signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
-        }
-      );
+      // Callback de acceso a la geolocalización
+      namespace.geoCallback = function(position) {
+        
+        if (namespace.geolocation !== null)
+          return;
+        
+        namespace.geolocation = available.geolocation = true;
+        signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
+      }
+      navigator.geolocation.watchPosition(function(data) { namespace.geoCallback(data); });
       
       setTimeout(function() {
         if (signal.flag == ARProgrezz.Utils.Flags.WAIT) {
@@ -147,130 +194,140 @@ ARProgrezz.Support = {};
     catch ( e ) { return false; } 
   }
   
-  /* TODO Completar código de las señales, y permitir activar o desactivar */
-  namespace.activateVideo = function() {
-    console.log("Pinguino");
+  /* Solicitud de activación/desactivación del vídeo */
+  function activateVideo() {
+    // TODO Descomentar
+    /*if (!namespace.gyroscope) {
+      alert(">> No se puede activar el vídeo con el giroscopio desactivado <<");
+      return;
+    }*/
+    
+    if (!available.video) {
+      alert(">> Vídeo no disponible <<");
+      return;
+    }
+    
+    if (namespace.onChangeVideo)
+      namespace.onChangeVideo();
   }
   
-  namespace.activateGeolocation = function() {
-    // TODO Poner la carga, pues está desactivada la geolocalización y desactivarla en la actualización de los objetos
-    alert("No se puede desactivar la geolocalización");
+  /* Solicitud de activación/desactivación de la geolocalización */
+  function activateGeolocation() {
+    
+    alert(">> No se puede utilizar el visor sin geolocalización <<");
+  }
+
+  /* Solicitud de activación/desactivación del giroscopio */
+  function activateGyroscope() {
+    
+    if (!available.gyroscope) { // Giroscopio no disponible
+      alert(">> Giroscopio no disponible <<");
+      return;
+    }
+    
+    if (namespace.video) // Si el vídeo está activado, se desactiva también
+      activateVideo();
+    
+    if (namespace.onChangeGyroscope)
+      namespace.onChangeGyroscope();
   }
   
-  namespace.activateGyroscope = function() {
-    console.log("Pinguino");
-  }
-  
+  /* Señales que indican la disponibilidad de las tecnologías, permitiendo su activación/desactivación */
   namespace.Signals = function() {
-  // TODO Comprobar en orden: Geolocalización, giroscopio y vídeo, si no hay geolocalización: se acabó, y si no hay giroscopio, no comprobar vídeo
-  
-  /* TODO Completar código de las señales, y permitir activar o desactivar */
     
-    var scope = this;
+    var scope = this; // Ámbito
     
+    var PATH = "/img/icons/"; // Ruta de los iconos
+    var EXT = ".png"; // Extensión de los iconos
+    var WHITE_EXT = "-white"; // Sufijo de imagen blanca
+    
+    var container; // Contenedor de la señales
+    var signals = { // Señales
+      geolocation: null,
+      gyroscope: null,
+      video: null
+    }
+    
+    /* Cambiar el tipo (color) de una señal */
+    this.changeSignalType = function(name) {
+      if (ARProgrezz.Support[name])
+        signals[name].style.backgroundColor = SIGNAL_ON_COLOR;
+      else
+        signals[name].style.backgroundColor = SIGNAL_OFF_COLOR;
+    };
+    
+    /* Inicialización de las señales */
     this.init = function() {
       
-      var signals = document.createElement("div");
-      signals.setAttribute("style",
-                           "position: absolute;" +
-                           "z-index: 1;" +
-                           "bottom: 10px;" +
-                           "left: 10px;");
+      // Creación del contenedor
+      container = document.createElement("div");
+      container.setAttribute("style",
+                             "position: absolute;" +
+                             "z-index: 1;" +
+                             "bottom: 10px;" +
+                             "left: 10px;");
       
+      // Creación de las señales
       for(var i = 0; i < 3; i++) {
         
-        var signal = document.createElement("img");
-        var signal_button = document.createElement("a");
-        
-        signals.appendChild(document.createElement("br"));
-        
-        signal.setAttribute("style",
-                            "border: outset 1px;" +
-                            "margin: 2.5px;");
-        
-        var signal_type, signal_img;
-        switch(i) {
-          case 0: // Geolocalización
-            signal_type = ARProgrezz.Support.geolocation;
-            signal.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation.png";
-            signal.onmousedown = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation-white.png";
-            };
-            signal.onmouseup = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation.png";
-            };
-            signal.onmouseleave = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation.png";
-            };
-            signal.ontouchstart = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation-white.png";
-            };
-            signal.ontouchend = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation.png";
-            };
-            signal.ontouchcancel = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/geolocation.png";
-            };
-            signal_button.onclick = ARProgrezz.Support.activateGeolocation;
+        var signal_name, activate_function;
+        switch (i) {
+          case 0:
+            signal_name = 'geolocation';
+            activate_function = activateGeolocation;
           break;
-          case 1: // Giroscopio
-            signal_type = ARProgrezz.Support.gyroscope;
-            signal.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope.png";
-            signal.onmousedown = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope-white.png";
-            };
-            signal.onmouseup = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope.png";
-            };
-            signal.onmouseleave = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope.png";
-            };
-            signal.ontouchstart = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope-white.png";
-            };
-            signal.ontouchend = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope.png";
-            };
-            signal.ontouchcancel = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/gyroscope.png";
-            };
-            signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateGyroscope();');
+          case 1:
+            signal_name = 'gyroscope';
+            activate_function = activateGyroscope;
           break;
-          case 2: // Vídeo
-            signal_type = ARProgrezz.Support.video;
-            signal.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera.png";
-            signal.onmousedown = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera-white.png";
-            };
-            signal.onmouseup = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera.png";
-            };
-            signal.onmouseleave = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera.png";
-            };
-            signal.ontouchstart = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera-white.png";
-            };
-            signal.ontouchend = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera.png";
-            };
-            signal.ontouchcancel = function() {
-              this.src = ARProgrezz.Utils.rootDirectory() + "/img/icons/videocamera.png";
-            };
-            signal_button.setAttribute('onclick', 'ARProgrezz.Support.activateVideo();');
+          case 2:
+            signal_name = 'video';
+            activate_function = activateVideo;
           break;
         }
         
-        if (signal_type)
-          signal.style.backgroundColor = "#55FC18";
+        signals[signal_name] = document.createElement("img");
+        signals[signal_name].setAttribute("style",
+                                          "border: outset 1px;" +
+                                          "margin: 2.5px;");
+        
+        var setImage = function() {
+          
+          var NAME = signal_name;
+          return function() {
+            this.src = ARProgrezz.Utils.rootDirectory() + PATH + NAME + EXT;
+          }
+        }();
+        
+        var setWhiteImage = function() {
+          
+          var NAME = signal_name;
+          return function() {
+            this.src = ARProgrezz.Utils.rootDirectory() + PATH + NAME + WHITE_EXT + EXT;
+          }
+        }();
+        
+        signals[signal_name].src = ARProgrezz.Utils.rootDirectory() + PATH + signal_name + EXT;
+        
+        signals[signal_name].addEventListener("mousedown", setWhiteImage);
+        signals[signal_name].addEventListener("mouseup", setImage);
+        signals[signal_name].addEventListener("mouseleave", setImage);
+        signals[signal_name].addEventListener("touchstart", setWhiteImage);
+        signals[signal_name].addEventListener("touchend", setImage);
+        signals[signal_name].addEventListener("touchcancel", setImage);
+        
+        signals[signal_name].addEventListener('click', activate_function);
+        
+        if (ARProgrezz.Support[signal_name])
+          signals[signal_name].style.backgroundColor = SIGNAL_ON_COLOR;
         else
-          signal.style.backgroundColor = "#666666"; 
+          signals[signal_name].style.backgroundColor = SIGNAL_OFF_COLOR; 
         
-        signal_button.appendChild(signal);
-        signals.appendChild(signal_button);
+        container.appendChild(document.createElement("br"));
+        container.appendChild(signals[signal_name]);
       }
-        
-      document.body.appendChild(signals);
+      
+      document.body.appendChild(container); // Añadiendo señales al documento
     }
     
     scope.init();

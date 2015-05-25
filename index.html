@@ -10,19 +10,19 @@
     <link type="text/css" rel="stylesheet" href="css/global.css" >
     
     <script type="text/javascript" src="lib/three.js/three.min.js"></script>
-    <script type="text/javascript" src="lib/three.js/DeviceOrientationControl.js"></script>
+    <script type="text/javascript" src="lib/three.js/effects/StereoEffect.js"></script>
     <script type="text/javascript" src="lib/three.js/renderers/CanvasRenderer.js"></script>
     <script type="text/javascript" src="lib/three.js/renderers/Projector.js"></script>
     
-    <script type="text/javascript" src="js/ARProgrezz.min.js"></script>
-    <!--<script type="text/javascript" src="js/ARProgrezz.js"></script>
+    <!--<script type="text/javascript" src="js/ARProgrezz.min.js"></script>-->
+    <script type="text/javascript" src="js/ARProgrezz.js"></script>
     <script type="text/javascript" src="js/Utils.js"></script>
     <script type="text/javascript" src="js/Preloader.js"></script>
     <script type="text/javascript" src="js/PositionControls.js"></script>
     <script type="text/javascript" src="js/Object.js"></script>
     <script type="text/javascript" src="js/Support.js"></script>
     <script type="text/javascript" src="js/Video.js"></script>
-    <script type="text/javascript" src="js/Viewer.js"></script>-->
+    <script type="text/javascript" src="js/Viewer.js"></script>
     
 </head>
 
@@ -34,24 +34,23 @@
     ARViewer.onInit = function() {
       
       var options1 = {
-        coords: { latitude: 28.481745, longitude: -16.325330 },
+        coords: { latitude: 28.482124, longitude: -16.325994 },
         type: 'basic',
-        /*onSelect: function() { window.location.assign("http://www.w3schools.com") },*/
         collectable: true
       }
       ARViewer.addObject(options1);
       
       var options2 = {
-        coords: { latitude: 28.482124, longitude: -16.325994 },
+        coords: { latitude: 28.481745, longitude: -16.325330 },
         type: 'basic',
-        /*onSelect: function() { window.location.assign("http://www.w3schools.com") },*/
+        onSelect: function() { setTimeout(function() { window.location.assign("http://www.w3schools.com"); }, 1000); },
         collectable: true
       }
       ARViewer.addObject(options2);
       
     };
     
-    ARViewer.initViewer();
+    ARViewer.initViewer({ mode: 'normal', range: 100 });
     
   </script>
 </body>
