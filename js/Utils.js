@@ -10,6 +10,14 @@ ARProgrezz.Utils = {};
     WAIT: 0
   };
   
+  
+  /* Conversor de grados a radianes */
+  if (typeof(Number.prototype.toRad) === "undefined") {
+    Number.prototype.toRad = function() {
+      return this * Math.PI / 180;
+    }
+  };
+  
   var WAIT_DELAY = 200; // (ms) Retardo de espera a Callbacks
 
   /* Espera de un Callback */
@@ -46,7 +54,7 @@ ARProgrezz.Utils = {};
     var path = null;
     
     for (var i = 0; i < scripts.length; i++) {
-      if (scripts[i].src != "")
+      if (scripts[i].src !== "")
         path = scripts[i].src;
       if (scripts[i].src.search("ARProgrezz.js") != -1) {
         path = scripts[i].src;
@@ -73,14 +81,8 @@ ARProgrezz.Utils = {};
     
     screen.lockOrientation = screen.lockOrientation || screen.webkitLockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
     
-    // TODO Quitar chivatos
-    if (screen.lockOrientation) {
+    if (screen.lockOrientation)
       screen.lockOrientation('landscape');
-      alert("Orientación bloqueada");
-    }
-    else {
-      alert("No se puede bloquear la orientación");
-    }
   }
   
 })(ARProgrezz.Utils);
