@@ -7,7 +7,8 @@ ARProgrezz.Viewer = function (settings) {
   /* Ajustes del visor */
   this.settings = {
     mode: 'normal', // 'normal' || 'stereoscopic'
-    range: 50 // Distancia máxima (m) a la que se ven los objetos
+    range: 50, // Distancia máxima (m) a la que se ven los objetos
+    signals: true // Indicadores visibles
   };
   
   /* Atributos */
@@ -364,9 +365,11 @@ ARProgrezz.Viewer = function (settings) {
     // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
     ARProgrezz.Utils.waitCallback(checked, function () {
       
-      ARProgrezz.Support.onChangeVideo = changeVideo; // Función de activación/desactivación del vídeo
-      ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
-      signals = new ARProgrezz.Support.Signals(); // Avisos
+      if (scope.settings.signals) {
+        ARProgrezz.Support.onChangeVideo = changeVideo; // Función de activación/desactivación del vídeo
+        ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
+        signals = new ARProgrezz.Support.Signals(); // Avisos
+      }
       
       // Inicializar realidad aumentada
       initAR( function () {
@@ -378,7 +381,8 @@ ARProgrezz.Viewer = function (settings) {
         ar_video.onSuccess = function() {
           
           // Creación del botón indicador de visión estereoscópica
-          initStereoButton();
+          if (scope.settings.signals)
+            initStereoButton();
           
           // Evento de ajuste de dimensiones y posición del visor
           adjustViewer();

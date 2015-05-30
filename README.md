@@ -61,6 +61,7 @@ El juego emplea el espacio de nombres 'ARProgrezz', siendo necesario para inicia
 Es necesario llamar a la función 'initViewer()' para la inicialización de todos los componentes, indicando una serie de opciones:
 - ***mode*** [string] - Default ['normal']: Modo de inicio del visor. A elegir entre modo 'normal', o 'stereoscopic' (visión estereoscópica con pantalla dividida para gafas de realidad virtual).
 - ***range*** [integer] - Default [50]: Rango de detección del visor. Sólo se visualizaran aquellos objetos a una distancia del dispositivo igual o inferior al rango indicado; además, el tamaño de los objetos se distribuirá dependerá de forma lineal de la distancia con el dispositivo y el rango de visión.
+- ***signals*** [boolean] - Default [true]: Indicador de si mostrar las señales de estado de las tecnologías disponibles y el modo estereosócico (con posibilidad de activación/desactivación).
 
 Dado que la inicialización se realiza de forma asíncrona, se proporciona el parámetro 'onInit' del visor, que consiste en una función a indicar por el usuario, que será ejecutada al termino de la inicialización satisfactoria del visor.
 
@@ -87,7 +88,7 @@ Para la creación y adición de los objetos se emplea la función 'addObject(opt
   <script type="text/javascript" src="lib/three.js/renderers/Projector.js"></script>
   <script type="text/javascript" src="js/ARProgrezz.min.js"></script>
 </head>
-<body style="margin:0px; padding:0px">
+<body style="margin:0px; padding:0px;">
   <script>
   
     var ARViewer = new ARProgrezz.Viewer();
