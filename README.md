@@ -33,6 +33,13 @@ Por último, el visor cuenta con la posibilidad de establecerse en modo visión 
 - **Imágenes**:
   - ***Iconos*** - [**ionicons**](http://ionicons.com/) - *Licencia MIT*: Plataforma de iconos gratuitos, de la que se han obtenido todos los iconos del visor, ubicados en 'img/icons'.
   - ***Preloader*** - [**Chimply**](http://www.chimply.com/Generator): Página web con generador de imágenes de carga personalizables, utilizada para generar 'preloader.gif'.
+  - ***Texturas***:
+    - **'sold_to_spring.jpg' by [*remixatlantic*](http://remixatlantic.deviantart.com/art/Sold-to-Spring-free-texture-wallpaper-329922684)**: Textura de los objetos.
+    - **'equirectangular_city.jpg' by [*Cgxev*](http://cgxev.deviantart.com/art/Urban-Human-Theaterproductions-equirectangular-map-374579252)**: Panorama de una ciudad como alternativa al vídeo.
+
+- **Herramientas**:
+  - [***JSLint***](http://www.jslint.com/): Analizador de código JavaScript.
+  - [***JSMin***](http://www.crockford.com/javascript/jsmin.html): Minimizador de código JavaScript.
 
 ##Instalación
 Para el empleo del visor de realidad aumentada en un proyecto existen dos opciones:
