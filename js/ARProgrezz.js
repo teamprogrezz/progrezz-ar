@@ -1,1 +1,1 @@
-ARProgrezz = {}; // Módulo de realidad aumentada
+var ARProgrezz = {}; // Módulo de realidad aumentada
