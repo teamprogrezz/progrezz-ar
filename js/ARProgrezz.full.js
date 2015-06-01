@@ -61,7 +61,7 @@ ARProgrezz.Utils = {};
             if (scripts[i].src !== "") {
                 path = scripts[i].src;
             }
-            if (scripts[i].src.search("ARProgrezz.js") !== -1) {
+            if (scripts[i].src.search("ARProgrezz") !== -1) {
                 path = scripts[i].src;
                 break;
             }
