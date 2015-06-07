@@ -184,11 +184,11 @@ ARProgrezz.PositionControls = function (camera) {
     }
 
     /* Distancia (m) entre dos longitudes */
-    function distanceTwoLongs (lon1, lon2) {
+    function distanceTwoLongs (lat, lon1, lon2) {
         var R = 6371; // Radio medio de la tierra (km)
         var dLon = lon2 - lon1;
         dLon = dLon.toRad();
-        var a = Math.pow(Math.sin(dLon / 2), 2);
+        var a = Math.pow(Math.cos(lat), 2) * Math.pow(Math.sin(dLon / 2), 2);
         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         var d = R * c * 1000; // Distancia (m)
         return d;
@@ -203,7 +203,7 @@ ARProgrezz.PositionControls = function (camera) {
 
     /* Posición en el eje X de un objeto, dada su longitud */
     this.getObjectX = function (longitude) {
-        return distanceTwoLongs(originLongitude, longitude) * ((originLongitude < longitude)
+        return distanceTwoLongs(originLatitude, originLongitude, longitude) * ((originLongitude < longitude)
             ? 1
             : -1);
     };
