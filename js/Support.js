@@ -107,7 +107,7 @@ ARProgrezz.Support = {};
                 var i, s = Object.keys(sourceInfos), videoSource = null;
                 for (i = 0; i < s.length; i += 1) {
                     if (sourceInfos[s[i]].kind === 'video' && sourceInfos[s[i]].facing !== 'user') {
-                        videoSource = sourceInfos[s].id;
+                        videoSource = sourceInfos[s[i]].id;
                     }
                 }
 
