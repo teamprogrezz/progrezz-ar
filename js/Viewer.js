@@ -352,7 +352,7 @@ ARProgrezz.Viewer = function () {
 
     /* Inicializar visor de realidad aumentada */
     this.initViewer = function (settings) {
-alert(">> Inicializando visor");
+
         // Estableciendo pantalla completa
         document.addEventListener('click', ARProgrezz.Utils.fullScreen, false);
 
@@ -371,7 +371,7 @@ alert(">> Inicializando visor");
         // Comprobando soporte de tecnologías
         var checked = {flag: ARProgrezz.Utils.Flags.WAIT};
         ARProgrezz.Support.check(function () {
-alert(">> Tecnologías comprobadas");
+
             checked.flag = ARProgrezz.Utils.Flags.SUCCESS;
         });
 
@@ -383,16 +383,16 @@ alert(">> Tecnologías comprobadas");
                 ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
                 signals = new ARProgrezz.Support.Signals(); // Avisos
             }
-alert(">> Comenzando acceso a tecnologías");
+
             // Inicializar realidad aumentada
             initAR(function () {
-alert(">> Realidad aumentada iniciada");
+
                 // Creación del vídeo
                 ar_video = new ARProgrezz.Video();
 
                 // Ejecución tras inicializar vídeo
                 ar_video.onSuccess = function () {
-alert(">> Vídeo inicializado");
+
                     // Creación del botón indicador de visión estereoscópica
                     if (scope.settings.signals) {
                         initStereoButton();
@@ -419,7 +419,7 @@ alert(">> Vídeo inicializado");
 
                     // Eliminando preloader
                     preloader.endLoad();
-alert(">> Visor iniciado");
+
                 };
 
                 // Inicializar vídeo
@@ -430,7 +430,7 @@ alert(">> Visor iniciado");
 
     /* Añadir objeto geolocalizado a la escena del visor */
     this.addObject = function (options) {
-alert(">> Añadiendo objeto");
+
         var object;
 
         // Creación del objeto dependiendo del tipo
@@ -444,7 +444,7 @@ alert(">> Añadiendo objeto");
         }
 
         objects.add(object.threeObject);
-alert(">> Objeto añadido");
+
     };
 
 };
