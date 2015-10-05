@@ -40,9 +40,9 @@ ARProgrezz.Support = {};
                 alert(">> El visor no ha podido iniciarse por no ser capaz de acceder a la geolocalización <<");
                 return;
             }
-
+alert("Hay geo");
             checkGyroscope(function () {
-
+alert("Hay giro");
                 if (!available.gyroscope) { // Sin giroscopio, no es necesario comprobar la carga del vídeo
                     available.video = false;
                     namespace.video = false;

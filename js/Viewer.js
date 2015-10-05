@@ -353,7 +353,7 @@ ARProgrezz.Viewer = function () {
 
     /* Inicializar visor de realidad aumentada */
     this.initViewer = function (settings) {
-
+alert("Iniciando visor");
         // Estableciendo pantalla completa
         document.addEventListener('click', ARProgrezz.Utils.fullScreen, false);
 
@@ -378,7 +378,7 @@ ARProgrezz.Viewer = function () {
 
         // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
         ARProgrezz.Utils.waitCallback(checked, function () {
-
+alert("tecnologías completadas");
             if (scope.settings.signals) {
                 ARProgrezz.Support.onChangeVideo = changeVideo; // Función de activación/desactivación del vídeo
                 ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
@@ -387,13 +387,13 @@ ARProgrezz.Viewer = function () {
 
             // Inicializar realidad aumentada
             initAR(function () {
-
+alert("ar completada");
                 // Creación del vídeo
                 ar_video = new ARProgrezz.Video();
 
                 // Ejecución tras inicializar vídeo
                 ar_video.onSuccess = function () {
-
+alert("video completado");
                     // Creación del botón indicador de visión estereoscópica
                     if (scope.settings.signals) {
                         initStereoButton();
