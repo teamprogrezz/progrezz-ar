@@ -154,6 +154,7 @@ ARProgrezz.Video.Panorama = function (scene, radius) {
 
     // Constantes
     var WIDTH_SEGMENTS = 45, HEIGHT_SEGMENTS = 30; // Segmentos en horizontal y vertical
+    var AUX_RADIUS = 50; // (m) Radio auxiliar para garantizar la visión de todos los objetos cercanos
 
     var p_scene = scene; // Escena 3D del visor
     var p_radius = radius; // Radio de la esfera del panorama
@@ -172,7 +173,7 @@ ARProgrezz.Video.Panorama = function (scene, radius) {
     /* Constructor */
     function init () {
 
-        var geometry = new THREE.SphereGeometry(p_radius, WIDTH_SEGMENTS, HEIGHT_SEGMENTS);
+        var geometry = new THREE.SphereGeometry(p_radius + AUX_RADIUS, WIDTH_SEGMENTS, HEIGHT_SEGMENTS);
         geometry.applyMatrix(new THREE.Matrix4().makeScale(-1, 1, 1));
 
         var texture = THREE.ImageUtils.loadTexture(ARProgrezz.Utils.rootDirectory() + '/img/textures/equirectangular_city.jpg');
