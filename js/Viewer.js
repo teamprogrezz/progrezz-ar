@@ -23,7 +23,7 @@ ARProgrezz.Viewer = function () {
     var ORIENTATION_DELAY = 300; // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
     var GAME_FOV = 60; // (º) Campo de visión
     var STEREO_EYE_SEPARATION = 5; // Separación entre los ojos para visión estereoscópica
-    var AUX_VISION = 2; // Distancia (m) auxiliar, para ver siempre lo que hay a máximo rango
+    var AUX_VISION = 50; // Distancia (m) auxiliar, para ver siempre lo que hay a máximo rango
     var MIN_VISION = 0.1, MAX_VISION; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
     var STEREO_ICON_PATH = "/img/icons/stereo.png";
     var STEREO_WHITE_ICON_PATH = "/img/icons/stereo-white.png";
@@ -307,7 +307,8 @@ ARProgrezz.Viewer = function () {
         // Coordenadas en pantalla
         if (scope.settings.mode === 'normal') { // Posición convertida en intervalo [-1, 1]
             targetVector.x = 2 * (posX / scope.viewerWidth) - 1;
-            targetVector.y = 1 - 2 * ((posY - real_height) / scope.viewerHeight);
+            alert(real_height + " " + posY + " " + scope.viewerHeight);
+            targetVector.y = 1 - 2 * (posY / scope.viewerHeight);
         } else if (scope.settings.mode === 'stereoscopic') { // En modo estereoscópico se lanza hacia el centro
             targetVector.x = 0;
             targetVector.y = 0;
@@ -337,7 +338,7 @@ ARProgrezz.Viewer = function () {
             adjustViewer(); // Ajustar dimensiones del visor
         };
 
-        ar_video.initVideo(ar_scene, scope.settings.range, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
+        ar_video.initVideo(ar_scene, scope.settings.range + AUX_VISION, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
     }
 
     /* Activación/desactivación del giroscopio */
