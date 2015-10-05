@@ -55,7 +55,8 @@ ARProgrezz.Object.Basic = function (coords, collectable, onSelectEvent, arContro
         setTimeout(function () {
             scope.threeObject.material.color.setHex(COLOR_DEFAULT);
         }, COLOR_DELAY);
-
+alert("Estoy aquíiii");
+alert(JSON.stringify(scope.onSelect));
         scope.onSelect();
     };
 
