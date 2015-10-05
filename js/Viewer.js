@@ -171,24 +171,24 @@ ARProgrezz.Viewer = function () {
 
     /* Inicialización de la escena de realidad aumentada */
     function initAR (onSuccess) {
-alert(" >> IN AR");
+
         var ar_inited = {flag: ARProgrezz.Utils.Flags.WAIT};
-alert(" >> IN AR 3");
+
         // Creación de la escena
         ar_scene = new THREE.Scene();
-alert(" >> IN AR 2");
+
         // Creación del renderizador
         real_renderer = initRenderer();
-alert(" >> IN AR 23");
+
         // Inicializando al jugador
         initPlayer(function () {
             ar_inited.flag = ARProgrezz.Utils.Flags.SUCCESS;
         });
-alert(" >> IN AR 3");
+
         ARProgrezz.Utils.waitCallback(ar_inited, function () {
             onSuccess(); // Continuando con la inicialización
         });
-alert(" >> IN AR4 "); 
+
     }
 
     /* Actualización de los objetos */
@@ -353,7 +353,7 @@ alert(" >> IN AR4 ");
 
     /* Inicializar visor de realidad aumentada */
     this.initViewer = function (settings) {
-
+        
         // Estableciendo pantalla completa
         document.addEventListener('click', ARProgrezz.Utils.fullScreen, false);
 
@@ -378,7 +378,7 @@ alert(" >> IN AR4 ");
 
         // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
         ARProgrezz.Utils.waitCallback(checked, function () {
-alert("tecnologías completadas");
+            
             if (scope.settings.signals) {
                 ARProgrezz.Support.onChangeVideo = changeVideo; // Función de activación/desactivación del vídeo
                 ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
@@ -387,13 +387,13 @@ alert("tecnologías completadas");
 
             // Inicializar realidad aumentada
             initAR(function () {
-alert("ar completada");
+
                 // Creación del vídeo
                 ar_video = new ARProgrezz.Video();
 
                 // Ejecución tras inicializar vídeo
                 ar_video.onSuccess = function () {
-alert("video completado");
+
                     // Creación del botón indicador de visión estereoscópica
                     if (scope.settings.signals) {
                         initStereoButton();
