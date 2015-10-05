@@ -23,7 +23,7 @@ ARProgrezz.Viewer = function () {
     var ORIENTATION_DELAY = 300; // (ms) Retardo de espera para obtención de dimensiones del dispositivo tras cambio de orientación
     var GAME_FOV = 60; // (º) Campo de visión
     var STEREO_EYE_SEPARATION = 5; // Separación entre los ojos para visión estereoscópica
-    var AUX_VISION = 50; // Distancia (m) auxiliar, para ver siempre lo que hay a máximo rango
+    var AUX_VISION = 2; // Distancia (m) auxiliar, para ver siempre lo que hay a máximo rango
     var MIN_VISION = 0.1, MAX_VISION; // Distancia mínima y máxima a la que enfoca la cámara (rango de visión)
     var STEREO_ICON_PATH = "/img/icons/stereo.png";
     var STEREO_WHITE_ICON_PATH = "/img/icons/stereo-white.png";
@@ -151,7 +151,6 @@ ARProgrezz.Viewer = function () {
         ar_renderer.setClearColor(0x000000, 0);
         ar_renderer.setPixelRatio(window.devicePixelRatio);
         ar_renderer.autoClear = false;
-        document.body.appendChild(ar_renderer.domElement);
 
         ar_stereo = new THREE.StereoEffect(ar_renderer);
         ar_stereo.eyeSeparation = STEREO_EYE_SEPARATION;
@@ -409,6 +408,9 @@ ARProgrezz.Viewer = function () {
                     // Iniciar actualizado de la escena
                     playAnimation();
 
+                    // Añadiendo la escena al documento
+                    document.body.appendChild(ar_renderer.domElement);
+        
                     // Haciendo efectiva la inicialización
                     scope.inited = true;
 
