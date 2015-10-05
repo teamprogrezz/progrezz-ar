@@ -433,7 +433,7 @@ ARProgrezz.Viewer = function () {
     this.addObject = function (options) {
 
         var object;
-alert("Función:" + JSON.stringify(options));
+
         // Creación del objeto dependiendo del tipo
         switch (options.type) {
         case 'basic':
