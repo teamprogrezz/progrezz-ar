@@ -171,24 +171,24 @@ ARProgrezz.Viewer = function () {
 
     /* Inicialización de la escena de realidad aumentada */
     function initAR (onSuccess) {
-
+alert(" >> IN AR");
         var ar_inited = {flag: ARProgrezz.Utils.Flags.WAIT};
-
+alert(" >> IN AR 3");
         // Creación de la escena
         ar_scene = new THREE.Scene();
-
+alert(" >> IN AR 2");
         // Creación del renderizador
         real_renderer = initRenderer();
-
+alert(" >> IN AR 23");
         // Inicializando al jugador
         initPlayer(function () {
             ar_inited.flag = ARProgrezz.Utils.Flags.SUCCESS;
         });
-
+alert(" >> IN AR 3");
         ARProgrezz.Utils.waitCallback(ar_inited, function () {
             onSuccess(); // Continuando con la inicialización
         });
-
+alert(" >> IN AR4 "); 
     }
 
     /* Actualización de los objetos */
@@ -353,7 +353,7 @@ ARProgrezz.Viewer = function () {
 
     /* Inicializar visor de realidad aumentada */
     this.initViewer = function (settings) {
-alert("Iniciando visor");
+
         // Estableciendo pantalla completa
         document.addEventListener('click', ARProgrezz.Utils.fullScreen, false);
 

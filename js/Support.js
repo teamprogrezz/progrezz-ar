@@ -5,7 +5,7 @@ ARProgrezz.Support = {};
 
     'use strict';
 
-    var GEO_TIMEOUT = 80000; // (ms)
+    var GEO_TIMEOUT = 30000; // (ms)
     var SIGNAL_ON_COLOR = "#55FC18"; // green
     var SIGNAL_OFF_COLOR = "#666666"; // gray
 
@@ -42,7 +42,7 @@ ARProgrezz.Support = {};
             }
 alert("Hay geo");
             checkGyroscope(function () {
-alert("Hay giro");
+
                 if (!available.gyroscope) { // Sin giroscopio, no es necesario comprobar la carga del vídeo
                     available.video = false;
                     namespace.video = false;
@@ -164,7 +164,7 @@ alert("Hay giro");
     function checkGeolocation (end_function) {
 
         if (navigator.geolocation) {
-alert("Existe geo");
+
             var signal = {flag: ARProgrezz.Utils.Flags.WAIT};
 
             // Callback de acceso a la geolocalización
@@ -179,7 +179,6 @@ alert("Existe geo");
                 signal.flag = ARProgrezz.Utils.Flags.SUCCESS;
             };
             navigator.geolocation.watchPosition(function (data) {
-                alert("Conseguido");
                 namespace.geoCallback(data);
             });
 
