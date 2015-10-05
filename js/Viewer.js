@@ -307,8 +307,7 @@ ARProgrezz.Viewer = function () {
         // Coordenadas en pantalla
         if (scope.settings.mode === 'normal') { // Posición convertida en intervalo [-1, 1]
             targetVector.x = 2 * (posX / scope.viewerWidth) - 1;
-            alert(real_height + " " + posY + " " + scope.viewerHeight);
-            targetVector.y = 1 - 2 * (posY / scope.viewerHeight);
+            targetVector.y = 1 - 2 * ((posY - ((real_height - scope.viewerHeight) / 2.0) )/ scope.viewerHeight);
         } else if (scope.settings.mode === 'stereoscopic') { // En modo estereoscópico se lanza hacia el centro
             targetVector.x = 0;
             targetVector.y = 0;
