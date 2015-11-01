@@ -5,7 +5,7 @@ ARProgrezz.Support = {};
 
     'use strict';
 
-    var GEO_TIMEOUT = 8000; // (ms)
+    var GEO_TIMEOUT = 30000; // (ms)
     var SIGNAL_ON_COLOR = "#55FC18"; // green
     var SIGNAL_OFF_COLOR = "#666666"; // gray
 
