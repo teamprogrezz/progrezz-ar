@@ -608,7 +608,7 @@ ARProgrezz.Support = {};
 
     'use strict';
 
-    var GEO_TIMEOUT = 8000; // (ms)
+    var GEO_TIMEOUT = 30000; // (ms)
     var SIGNAL_ON_COLOR = "#55FC18"; // green
     var SIGNAL_OFF_COLOR = "#666666"; // gray
 
@@ -710,7 +710,7 @@ ARProgrezz.Support = {};
                 var i, s = Object.keys(sourceInfos), videoSource = null;
                 for (i = 0; i < s.length; i += 1) {
                     if (sourceInfos[s[i]].kind === 'video' && sourceInfos[s[i]].facing !== 'user') {
-                        videoSource = sourceInfos[s].id;
+                        videoSource = sourceInfos[s[i]].id;
                     }
                 }
 
@@ -1306,6 +1306,7 @@ ARProgrezz.Viewer = function () {
         ar_renderer.setClearColor(0x000000, 0);
         ar_renderer.setPixelRatio(window.devicePixelRatio);
         ar_renderer.autoClear = false;
+
         document.body.appendChild(ar_renderer.domElement);
 
         ar_stereo = new THREE.StereoEffect(ar_renderer);
@@ -1461,7 +1462,7 @@ ARProgrezz.Viewer = function () {
         // Coordenadas en pantalla
         if (scope.settings.mode === 'normal') { // Posición convertida en intervalo [-1, 1]
             targetVector.x = 2 * (posX / scope.viewerWidth) - 1;
-            targetVector.y = 1 - 2 * (posY / scope.viewerHeight);
+            targetVector.y = 1 - 2 * ((posY - ((real_height - scope.viewerHeight) / 2.0) )/ scope.viewerHeight);
         } else if (scope.settings.mode === 'stereoscopic') { // En modo estereoscópico se lanza hacia el centro
             targetVector.x = 0;
             targetVector.y = 0;
@@ -1491,7 +1492,7 @@ ARProgrezz.Viewer = function () {
             adjustViewer(); // Ajustar dimensiones del visor
         };
 
-        ar_video.initVideo(ar_scene, scope.settings.range, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
+        ar_video.initVideo(ar_scene, scope.settings.range + AUX_VISION, (scope.settings.mode === 'stereoscopic')); // Iniciando vídeo
     }
 
     /* Activación/desactivación del giroscopio */
@@ -1507,7 +1508,7 @@ ARProgrezz.Viewer = function () {
 
     /* Inicializar visor de realidad aumentada */
     this.initViewer = function (settings) {
-
+        
         // Estableciendo pantalla completa
         document.addEventListener('click', ARProgrezz.Utils.fullScreen, false);
 
@@ -1532,7 +1533,7 @@ ARProgrezz.Viewer = function () {
 
         // Esperando a que se chequeen las tecnologías disponibles, para la inicialización
         ARProgrezz.Utils.waitCallback(checked, function () {
-
+            
             if (scope.settings.signals) {
                 ARProgrezz.Support.onChangeVideo = changeVideo; // Función de activación/desactivación del vídeo
                 ARProgrezz.Support.onChangeGyroscope = changeGyroscope; // Función de activación/desactivación del giroscopio
@@ -1574,6 +1575,7 @@ ARProgrezz.Viewer = function () {
 
                     // Eliminando preloader
                     preloader.endLoad();
+
                 };
 
                 // Inicializar vídeo
@@ -1598,6 +1600,7 @@ ARProgrezz.Viewer = function () {
         }
 
         objects.add(object.threeObject);
+
     };
 
 };
