@@ -433,11 +433,19 @@ ARProgrezz.Viewer = function () {
     this.addObject = function (options) {
 
         var object;
-
+        
+        
+        
         // Creación del objeto dependiendo del tipo
         switch (options.type) {
         case 'basic':
             object = new ARProgrezz.Object.Basic(options.coords, options.collectable, options.onSelect, ar_controls, ar_renderer.getMaxAnisotropy(), scope.settings.range);
+            break;
+        case 'torus':
+            object = new ARProgrezz.Object.Torus(options.coords, options.collectable, options.onSelect, ar_controls, ar_renderer.getMaxAnisotropy(), scope.settings.range);
+            break;
+        case 'cylinder':
+            object = new ARProgrezz.Object.Cylinder(options.coords, options.collectable, options.onSelect, ar_controls, ar_renderer.getMaxAnisotropy(), scope.settings.range);
             break;
         default:
             console.log("Error: Tipo de objeto '" + options.type + "' desconocido");
